@@ -7,16 +7,14 @@
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
 
-  <!-- Bootstrap RTL CSS -->
+  <!-- Bootstrap RTL & FontAwesome -->
   <link id="bootstrap-link" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="./style.css?v=2.1">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body class="bg-dark text-white">
 
-  <!-- Navbar Navigation -->
+  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container">
       <a class="navbar-brand fw-bold text-info" href="#" id="logo-text">سينما</a>
@@ -25,30 +23,20 @@
       </button>
       
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-menu nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link text-white active" href="#" id="nav-home" onclick="loadCategory('trending')">الرئيسية</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-white" href="#" id="nav-favs" onclick="loadCategory('favorites')">
-              <span id="nav-fav-text">المفضلة</span> ❤️
-            </a>
-          </li>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link active" href="#" id="nav-home" onclick="loadCategory('trending')">الرئيسية</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')"><span id="nav-fav-text">المفضلة</span> ❤️</a></li>
         </ul>
 
-        <!-- User Authentication & Profile Block -->
+        <!-- Google Auth Block -->
         <div id="auth-container" class="d-flex align-items-center gap-2 my-2 my-lg-0 me-3">
           <button id="login-btn" class="btn btn-outline-info btn-sm">
             <i class="fa-brands fa-google me-1"></i> تسجيل الدخول
           </button>
           <div id="user-info" class="d-none d-flex align-items-center gap-2">
-            <img id="user-avatar" src="" alt="المستخدم" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+            <img id="user-avatar" src="" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
             <span id="user-name" class="small text-white"></span>
             <button id="logout-btn" class="btn btn-outline-danger btn-sm p-1 px-2" title="تسجيل الخروج">
               <i class="fa-solid fa-right-from-bracket"></i>
@@ -56,9 +44,8 @@
           </div>
         </div>
 
-        <!-- Search Field -->
         <form class="d-flex" id="search-form">
-          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم أو مسلسل..." aria-label="Search">
+          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم أو مسلسل...">
           <button class="btn btn-outline-info" type="submit" id="btn-search">بحث</button>
         </form>
 
@@ -67,101 +54,74 @@
     </div>
   </nav>
 
-  <!-- Main Display Grid -->
+  <!-- Grid Area -->
   <div class="container my-4">
     <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
-    <div class="row" id="movies-grid">
-      <!-- Dynamic Content -->
-    </div>
+    <div class="row" id="movies-grid"></div>
   </div>
 
-  <!-- Detail Modal View -->
+  <!-- Modal View -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content bg-dark text-white border-secondary">
         
         <div class="modal-header border-secondary">
           <h5 class="modal-title fw-bold text-info" id="modalTitle">عنوان العمل</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
           <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active text-light" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab">
-                <i class="fa-solid fa-circle-info me-1"></i> القصة والتفاصيل
-              </button>
+            <li class="nav-item">
+              <button class="nav-link active text-light" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane"><i class="fa-solid fa-circle-info me-1"></i> التفاصيل</button>
             </li>
-            <li class="nav-item d-none" id="episodes-tab-li" role="presentation">
-              <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane" type="button" role="tab">
-                <i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم
-              </button>
+            <li class="nav-item d-none" id="episodes-tab-li">
+              <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane"><i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم</button>
             </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab">
-                <i class="fa-solid fa-comments me-1"></i> التقييمات والمراجعات
-              </button>
+            <li class="nav-item">
+              <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane"><i class="fa-solid fa-comments me-1"></i> التقييمات والمراجعات</button>
             </li>
           </ul>
 
-          <div class="tab-content" id="detailTabsContent">
-            
-            <!-- 1. Tab: القصة، الإعلان، والطاقم -->
-            <div class="tab-pane fade show active" id="info-tab-pane" role="tabpanel">
+          <div class="tab-content">
+            <!-- 1. التفاصيل -->
+            <div class="tab-pane fade show active" id="info-tab-pane">
               <p id="modalOverview" class="text-secondary leading-relaxed"></p>
-              
               <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
                 <iframe id="trailerIframe" src="" allowfullscreen></iframe>
               </div>
-
-              <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل الأساسي:</h6>
+              <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل:</h6>
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- 2. Tab: الحلقات والمواسم -->
-            <div class="tab-pane fade" id="episodes-tab-pane" role="tabpanel">
-              <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-3 rounded border border-secondary">
-                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
+            <!-- 2. الحلقات -->
+            <div class="tab-pane fade" id="episodes-tab-pane">
+              <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
+                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">الموسم:</label>
                 <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
-
-              <div id="episodesContainer" class="row g-3" style="max-height: 420px; overflow-y: auto;"></div>
+              <div id="episodesContainer" class="row g-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
 
-            <!-- 3. Tab: تقييمات الفيلم فقط -->
-            <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel">
-              <!-- أضيف هذا القسم وتقييمه للأفلام فقط -->
+            <!-- 3. التقييمات (للأفلام) -->
+            <div class="tab-pane fade" id="reviews-tab-pane">
               <div id="movie-rating-section" class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
-                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك للفيلم:</h6>
-                
+                <h6 class="fw-bold text-info mb-2">أضف تقييمك للفيلم:</h6>
                 <div class="d-flex align-items-center gap-2 mb-2">
-                  <label for="userRatingInput" class="small text-secondary me-1">التقييم:</label>
                   <select id="userRatingInput" class="form-select form-select-sm bg-dark text-warning border-secondary w-auto">
                     <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10/10)</option>
                     <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9/10)</option>
                     <option value="8" selected>⭐⭐⭐⭐⭐⭐⭐⭐ (8/10)</option>
                     <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7/10)</option>
-                    <option value="6">⭐⭐⭐⭐⭐⭐ (6/10)</option>
-                    <option value="5">⭐⭐⭐⭐⭐ (5/10)</option>
-                    <option value="4">⭐⭐⭐⭐ (4/10)</option>
-                    <option value="3">⭐⭐⭐ (3/10)</option>
-                    <option value="2">⭐⭐ (2/10)</option>
-                    <option value="1">⭐ (1/10)</option>
                   </select>
                 </div>
-
-                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="3" placeholder="اكتب رأيك أو تعليقك حول هذا الفيلم..."></textarea>
-                <div>
-                  <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold px-3">
-                    <i class="fa-solid fa-paper-plane me-1"></i> نشر التقييم
-                  </button>
-                </div>
+                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="اكتب رأيك حول هذا الفيلم..."></textarea>
+                <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold">نشر التقييم</button>
               </div>
 
-              <h6 class="fw-bold text-light mb-2"><i class="fa-solid fa-comments me-1"></i> آراء ومراجعات المتابعين:</h6>
+              <h6 class="fw-bold text-light mb-2">المراجعات:</h6>
               <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
-
           </div>
         </div>
 
@@ -171,16 +131,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="./firebase-config.js"></script>
-  <script src="./app.js?v=2.1"></script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
