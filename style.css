@@ -157,3 +157,18 @@ body {
   border-bottom: 2px solid var(--accent-color) !important;
   color: var(--accent-color) !important;
 }
+
+/* حل مشكلة تعليق التعتيم والتجميد */
+.modal-backdrop {
+  z-index: 1040 !important;
+}
+
+.modal {
+  z-index: 1050 !important;
+}
+
+/* إلغاء حجب الضغط عند غياب النافذة */
+body:not(.modal-open) .modal-backdrop {
+  display: none !important;
+  pointer-events: none !important;
+}

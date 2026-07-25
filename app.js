@@ -738,3 +738,18 @@ searchForm.addEventListener('submit', async (e) => {
 });
 
 loadCategory('trending');
+
+// تنظيف الخلفية الرمادية فوراً في حال تعلقها
+function clearModalBackdrop() {
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.overflow = 'auto';
+  document.body.style.paddingRight = '0px';
+}
+
+// أضف هذا الاستدعاء عند فتح أو إغلاق أي نافذة أو بعد تسجيل الدخول
+window.addEventListener('click', (e) => {
+  if (!document.querySelector('.modal.show')) {
+    clearModalBackdrop();
+  }
+});
