@@ -60,6 +60,6 @@ body {
 .actor-card { width: 75px; }
 .actor-img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; }
 
-/* إصلاح تعليق الخلفيات الرمادية */
+/* حل تعليق غطاء المودال الرمادي */
 .modal-backdrop { z-index: 1040 !important; }
 .modal { z-index: 1050 !important; }

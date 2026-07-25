@@ -3,11 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cinema App</title>
+  <title>Cinema App - سينما</title>
+
+  <!-- Favicon أيقونة الموقع في التبويب -->
+  <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/3172/3172522.png">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
 
-  <!-- Bootstrap RTL & FontAwesome -->
+  <!-- Bootstrap RTL + FontAwesome -->
   <link id="bootstrap-link" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./style.css">
@@ -17,7 +20,11 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold text-info" href="#" id="logo-text">سينما</a>
+      <a class="navbar-brand fw-bold text-info d-flex align-items-center gap-2" href="#">
+        <i class="fa-solid fa-film text-info fs-4"></i>
+        <span id="logo-text">سينما</span>
+      </a>
+      
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -30,13 +37,13 @@
           <li class="nav-item"><a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')"><span id="nav-fav-text">المفضلة</span> ❤️</a></li>
         </ul>
 
-        <!-- Google Auth Block -->
+        <!-- زر تسجيل الدخول وبلوك المستخدم -->
         <div id="auth-container" class="d-flex align-items-center gap-2 my-2 my-lg-0 me-3">
           <button id="login-btn" class="btn btn-outline-info btn-sm">
             <i class="fa-brands fa-google me-1"></i> تسجيل الدخول
           </button>
           <div id="user-info" class="d-none d-flex align-items-center gap-2">
-            <img id="user-avatar" src="" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+            <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
             <span id="user-name" class="small text-white"></span>
             <button id="logout-btn" class="btn btn-outline-danger btn-sm p-1 px-2" title="تسجيل الخروج">
               <i class="fa-solid fa-right-from-bracket"></i>
@@ -54,17 +61,16 @@
     </div>
   </nav>
 
-  <!-- Grid Area -->
+  <!-- Container المحتوى -->
   <div class="container my-4">
     <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
     <div class="row" id="movies-grid"></div>
   </div>
 
-  <!-- Modal View -->
+  <!-- Modal تفاصيل العمل -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content bg-dark text-white border-secondary">
-        
         <div class="modal-header border-secondary">
           <h5 class="modal-title fw-bold text-info" id="modalTitle">عنوان العمل</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -84,7 +90,7 @@
           </ul>
 
           <div class="tab-content">
-            <!-- 1. التفاصيل -->
+            <!-- 1. التفاصيل والإعلان -->
             <div class="tab-pane fade show active" id="info-tab-pane">
               <p id="modalOverview" class="text-secondary leading-relaxed"></p>
               <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
@@ -94,16 +100,16 @@
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- 2. الحلقات -->
+            <!-- 2. الحلقات والمواسم (لالمسلسلات) -->
             <div class="tab-pane fade" id="episodes-tab-pane">
               <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
-                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">الموسم:</label>
+                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
                 <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
               <div id="episodesContainer" class="row g-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
 
-            <!-- 3. التقييمات (للأفلام) -->
+            <!-- 3. المراجعات (للأفلام) -->
             <div class="tab-pane fade" id="reviews-tab-pane">
               <div id="movie-rating-section" class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
                 <h6 class="fw-bold text-info mb-2">أضف تقييمك للفيلم:</h6>
@@ -113,13 +119,15 @@
                     <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9/10)</option>
                     <option value="8" selected>⭐⭐⭐⭐⭐⭐⭐⭐ (8/10)</option>
                     <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7/10)</option>
+                    <option value="6">⭐⭐⭐⭐⭐⭐ (6/10)</option>
+                    <option value="5">⭐⭐⭐⭐⭐ (5/10)</option>
                   </select>
                 </div>
                 <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="اكتب رأيك حول هذا الفيلم..."></textarea>
                 <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold">نشر التقييم</button>
               </div>
 
-              <h6 class="fw-bold text-light mb-2">المراجعات:</h6>
+              <h6 class="fw-bold text-light mb-2">مراجعات الجمهور:</h6>
               <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
           </div>
@@ -130,7 +138,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="./firebase-config.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
