@@ -1,0 +1,23 @@
+{
+  "short_name": "سينما",
+  "name": "تطبيق متتبع الأفلام والمسلسلات",
+  "icons": [
+    {
+      "src": "cinema.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "cinema.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar"
+}

@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer" />
+  <!-- PWA Manifest Link -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <title>متتبع الأفلام والمسلسلات | Movie Tracker</title>
   <link rel="icon" type="image/png" href="cinema.png">
   <!-- Bootstrap 5 CSS -->
@@ -75,8 +78,8 @@
   <!-- Modal تفاصيل الفيلم/المسلسل والتريلر والطاقم -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content text-light" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
-        <div class="modal-header" style="border-bottom-color: var(--border-color);">
+      <div class="modal-content text-light" style="background-color: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155);">
+        <div class="modal-header" style="border-bottom-color: var(--border-color, #334155);">
           <h5 class="modal-title fw-bold text-info" id="modalTitle">تفاصيل العمل</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -99,11 +102,11 @@
   </div>
 
   <!-- Footer -->
-  <footer class="app-footer text-center">
+  <footer class="app-footer text-center py-4 border-top border-secondary mt-auto">
     <div class="container">
       <p class="mb-1">
         تطوير وتصميم بواسطة 
-        <a href="https://github.com/Abdulhadi-123" target="_blank" rel="noopener noreferrer" class="footer-link">
+        <a href="https://github.com/Abdulhadi-123" target="_blank" rel="noopener noreferrer" class="footer-link text-info text-decoration-none">
           عبدالهادي <i class="fa-brands fa-github ms-1"></i>
         </a>
       </p>
@@ -146,43 +149,59 @@
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // تصدير الكائنات إلى النطاق العام (window) لكي نتمكن من الوصول إليها داخل app.js
     window.auth = auth;
     window.db = db;
     window.doc = doc;
     window.setDoc = setDoc;
     window.getDoc = getDoc;
 
+    const userProfile = document.getElementById('user-profile');
+
+    // استماع الأحداث للتسجيل والخروج باستخدام Event Delegation
+    if (userProfile) {
+      userProfile.addEventListener('click', (e) => {
+        if (e.target.closest('#login-btn')) {
+          signInWithPopup(auth, provider);
+        } else if (e.target.closest('#logout-btn')) {
+          signOut(auth);
+        }
+      });
+    }
+
     onAuthStateChanged(auth, (user) => {
-      const userProfile = document.getElementById('user-profile');
       if (!userProfile) return;
 
       if (user) {
         window.currentUser = user;
         userProfile.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="${user.photoURL}" style="width: 35px; height: 35px; border-radius: 50%;">
-            <span class="text-white small fw-bold">${user.displayName}</span>
+          <div class="d-flex align-items-center gap-2">
+            <img src="${user.photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+            <span class="text-white small fw-bold d-none d-md-inline">${user.displayName}</span>
             <button id="logout-btn" class="btn btn-sm btn-outline-danger">خروج</button>
           </div>
         `;
-        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-        
-        // جلب مزامنة المفضلة من السحابة إذا كانت الدالة معرفة في app.js
         if (typeof syncFavoritesFromCloud === 'function') {
           syncFavoritesFromCloud();
         }
       } else {
         window.currentUser = null;
         userProfile.innerHTML = `<button id="login-btn" class="btn btn-primary btn-sm fw-bold">تسجيل الدخول بـ Google</button>`;
-        document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
-        
-        // عند تسجيل الخروج، العودة للتحميل من الـ LocalStorage إذا رغبت
         if (typeof loadLocalFavorites === 'function') {
           loadLocalFavorites();
         }
       }
     });
+  </script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker Registered!'))
+          .catch(err => console.log('Service Worker Failed:', err));
+      });
+    }
   </script>
 
   <!-- App logic -->
