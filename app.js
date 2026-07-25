@@ -40,7 +40,7 @@ async function saveData() {
   localStorage.setItem('cinema_watched', JSON.stringify(watchedList));
   localStorage.setItem('cinema_watched_episodes', JSON.stringify(watchedEpisodes));
 
-  if (window.currentUser && window.db) {
+  if (window.currentUser && window.db && typeof window.doc === 'function') {
     try {
       const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
       await window.setDoc(userDocRef, {
@@ -56,7 +56,7 @@ async function saveData() {
 }
 
 window.syncUserDataFromCloud = async function() {
-  if (window.currentUser && window.db) {
+  if (window.currentUser && window.db && typeof window.doc === 'function') {
     try {
       const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
       const docSnap = await window.getDoc(userDocRef);
@@ -84,6 +84,7 @@ function getEndpoint(category, page = 1) {
 }
 
 async function fetchMultiplePages(category) {
+  if (!moviesGrid) return;
   moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info" role="status"></div></div>`;
   try {
     const [d1, d2, d3] = await Promise.all([
@@ -99,6 +100,7 @@ async function fetchMultiplePages(category) {
 }
 
 function displayItems(items) {
+  if (!moviesGrid) return;
   moviesGrid.innerHTML = '';
   items.forEach((item) => {
     const title = item.title || item.name;
@@ -133,7 +135,8 @@ function displayItems(items) {
 
     card.addEventListener('click', (e) => {
       if (!e.target.closest('.fav-btn') && !e.target.closest('.watched-card-btn')) {
-        openMovieDetails(item.id, item.media_type || (item.title ? 'movie' : 'tv'));
+        const type = item.media_type || (item.title ? 'movie' : 'tv');
+        openMovieDetails(item.id, type);
       }
     });
 
@@ -164,11 +167,11 @@ function toggleWatchedMovie(itemId, btn) {
 }
 
 // ==========================================
-// 3️⃣ تفاصيل المودال، الترايلر والحلقات
+// 3️⃣ تفاصيل المودال والترايلر والحلقات
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
   const modalElement = document.getElementById('movieDetailModal');
-  const modal = new bootstrap.Modal(modalElement);
+  const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
   
   document.getElementById('modalTitle').textContent = 'جاري التحميل...';
   document.getElementById('modalOverview').textContent = '';
@@ -176,9 +179,15 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   document.getElementById('trailerIframe').src = '';
   document.getElementById('castContainer').innerHTML = '';
 
-  const epTab = document.getElementById('episodes-tab-li');
+  const epTabLi = document.getElementById('episodes-tab-li');
 
-  new bootstrap.Tab(document.getElementById('info-tab')).show();
+  // إظهار التبويب الأول بشكل افتراضي
+  const infoTabBtn = document.getElementById('info-tab');
+  if (infoTabBtn) {
+    const tabInstance = bootstrap.Tab.getOrCreateInstance(infoTabBtn);
+    tabInstance.show();
+  }
+
   modal.show();
 
   try {
@@ -187,19 +196,21 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     const data = await res.json();
 
     document.getElementById('modalTitle').textContent = data.title || data.name;
-    document.getElementById('modalOverview').textContent = data.overview || 'لا يوجد ملخص متوفر.';
+    document.getElementById('modalOverview').textContent = data.overview || 'لا يوجد ملخص متوفر لهذا العمل.';
 
+    // التبديل بين إظهار/إخفاء تبويب الحلقات والمواسم
     if (mediaType === 'movie') {
-      if (epTab) epTab.classList.add('d-none');
+      if (epTabLi) epTabLi.classList.add('d-none');
     } else {
-      if (epTab) epTab.classList.remove('d-none');
+      if (epTabLi) epTabLi.classList.remove('d-none');
       setupSeasons(data.seasons || [], itemId);
     }
 
     // 2. جلب الفيديو الإعلاني (Trailer)
     const vRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     const vData = await vRes.json();
-    const trailer = (vData.results || []).find(v => v.site === 'YouTube' && (v.type.toLowerCase() === 'trailer' || v.type.toLowerCase() === 'teaser'));
+    const videos = vData.results || [];
+    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip')) || videos[0];
     
     if (trailer) {
       document.getElementById('trailerIframe').src = `https://www.youtube.com/embed/${trailer.key}`;
@@ -221,7 +232,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     });
 
   } catch (e) {
-    console.error("خطأ في جلب التفاصيل:", e);
+    console.error("خطأ في جلب تفاصيل العمل:", e);
   }
 }
 
@@ -229,10 +240,15 @@ function setupSeasons(seasons, tvId) {
   const select = document.getElementById('seasonSelect');
   if (!select) return;
   select.innerHTML = '';
+  
   const validSeasons = seasons.filter(s => s.season_number > 0);
   
+  if (validSeasons.length === 0 && seasons.length > 0) {
+    validSeasons.push(...seasons);
+  }
+
   validSeasons.forEach(s => {
-    select.innerHTML += `<option value="${s.season_number}">${s.name} (${s.episode_count} حلقة)</option>`;
+    select.innerHTML += `<option value="${s.season_number}">${s.name || 'موسم ' + s.season_number} (${s.episode_count || 0} حلقة)</option>`;
   });
 
   if (validSeasons.length > 0) fetchEpisodes(tvId, validSeasons[0].season_number);
@@ -249,7 +265,13 @@ async function fetchEpisodes(tvId, seasonNum) {
     const data = await res.json();
     container.innerHTML = '';
 
-    (data.episodes || []).forEach(ep => {
+    const episodes = data.episodes || [];
+    if (episodes.length === 0) {
+      container.innerHTML = `<div class="col-12 text-center text-muted py-3">لا توجد حلقات متاحة لهذا الموسم.</div>`;
+      return;
+    }
+
+    episodes.forEach(ep => {
       const epKey = `${tvId}_S${seasonNum}_E${ep.episode_number}`;
       const isWatched = watchedEpisodes.includes(epKey);
       const img = ep.still_path ? `${IMAGE_BASE_URL}${ep.still_path}` : 'https://placehold.co/300x170/1e293b/ffffff?text=No+Image';
@@ -320,6 +342,7 @@ function toggleFavorite(item, btn) {
 }
 
 function displayFavorites() {
+  if (!moviesGrid) return;
   favorites.length === 0 
     ? moviesGrid.innerHTML = `<div class="col-12 text-center text-muted my-5"><h3>${translations[currentLang].noFavs}</h3></div>`
     : displayItems(favorites);
@@ -335,7 +358,7 @@ function loadCategory(category) {
   if (category === 'favorites') document.getElementById('nav-favs')?.classList.add('active');
 
   const t = translations[currentLang];
-  sectionTitle.textContent = t[`${category}Title`] || t.trendingTitle;
+  if (sectionTitle) sectionTitle.textContent = t[`${category}Title`] || t.trendingTitle;
 
   category === 'favorites' ? displayFavorites() : fetchMultiplePages(category);
 }
@@ -364,23 +387,25 @@ function toggleLanguage() {
 
 window.toggleLanguage = toggleLanguage;
 
-searchForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const q = searchInput.value.trim();
-  if (q) {
-    sectionTitle.textContent = `${translations[currentLang].searchResults} "${q}"`;
-    moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info"></div></div>`;
-    try {
-      const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=${currentLang}&query=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      displayItems((data.results || []).filter(i => i.media_type === 'movie' || i.media_type === 'tv'));
-    } catch (e) { console.error(e); }
-    searchInput.value = '';
-  }
-});
+if (searchForm) {
+  searchForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = searchInput.value.trim();
+    if (q) {
+      sectionTitle.textContent = `${translations[currentLang].searchResults} "${q}"`;
+      moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info"></div></div>`;
+      try {
+        const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=${currentLang}&query=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        displayItems((data.results || []).filter(i => i.media_type === 'movie' || i.media_type === 'tv'));
+      } catch (e) { console.error(e); }
+      searchInput.value = '';
+    }
+  });
+}
 
 // ==========================================
-// 5️⃣ تنظيف خلفية الـ Modal
+// 5️⃣ تنظيف خلفية الـ Modal تلقائياً
 // ==========================================
 function clearModalBackdrop() {
   document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
@@ -389,9 +414,13 @@ function clearModalBackdrop() {
   document.body.style.paddingRight = '0px';
 }
 
-document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', () => {
-  document.getElementById('trailerIframe').src = '';
-  clearModalBackdrop();
-});
+const modalElem = document.getElementById('movieDetailModal');
+if (modalElem) {
+  modalElem.addEventListener('hidden.bs.modal', () => {
+    const iframe = document.getElementById('trailerIframe');
+    if (iframe) iframe.src = '';
+    clearModalBackdrop();
+  });
+}
 
 loadCategory('trending');

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cinema App - سينما</title>
 
-  <!-- Favicon أيقونة الموقع في التبويب -->
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3172/3172522.png">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -37,7 +37,7 @@
           <li class="nav-item"><a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')"><span id="nav-fav-text">المفضلة</span> ❤️</a></li>
         </ul>
 
-        <!-- زر تسجيل الدخول وبلوك المستخدم -->
+        <!-- auth container -->
         <div id="auth-container" class="d-flex align-items-center gap-2 my-2 my-lg-0 me-3">
           <button id="login-btn" class="btn btn-outline-info btn-sm">
             <i class="fa-brands fa-google me-1"></i> تسجيل الدخول
@@ -90,9 +90,12 @@
             <!-- 1. التفاصيل والإعلان -->
             <div class="tab-pane fade show active" id="info-tab-pane">
               <p id="modalOverview" class="text-secondary leading-relaxed"></p>
+              
+              <!-- container التريلر والڤيديو -->
               <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
                 <iframe id="trailerIframe" src="" allowfullscreen></iframe>
               </div>
+
               <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل:</h6>
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
@@ -113,29 +116,69 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Firebase Setup -->
   <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
-    authDomain: "cinema-5321b.firebaseapp.com",
-    projectId: "cinema-5321b",
-    storageBucket: "cinema-5321b.firebasestorage.app",
-    messagingSenderId: "286569379324",
-    appId: "1:286569379324:web:256b0c9d9f04c0d0ccee79",
-    measurementId: "G-BSRJLZXNDC"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
+      authDomain: "cinema-5321b.firebaseapp.com",
+      projectId: "cinema-5321b",
+      storageBucket: "cinema-5321b.firebasestorage.app",
+      messagingSenderId: "286569379324",
+      appId: "1:286569379324:web:256b0c9d9f04c0d0ccee79",
+      measurementId: "G-BSRJLZXNDC"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    window.db = db;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        signInWithPopup(auth, provider).catch(err => console.error(err));
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => location.reload());
+      });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.currentUser = user;
+        if (loginBtn) loginBtn.classList.add('d-none');
+        if (userInfo) userInfo.classList.remove('d-none');
+        if (userAvatar) userAvatar.src = user.photoURL || '';
+        if (userName) userName.textContent = user.displayName || 'مستخدم';
+        if (typeof window.syncUserDataFromCloud === 'function') {
+          window.syncUserDataFromCloud();
+        }
+      } else {
+        window.currentUser = null;
+        if (loginBtn) loginBtn.classList.remove('d-none');
+        if (userInfo) userInfo.classList.add('d-none');
+      }
+    });
+  </script>
+
   <script src="./app.js"></script>
 </body>
 </html>
