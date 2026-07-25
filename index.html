@@ -42,9 +42,15 @@
           <button id="login-btn" class="btn btn-outline-info btn-sm">
             <i class="fa-brands fa-google me-1"></i> تسجيل الدخول
           </button>
+          
           <div id="user-info" class="d-none d-flex align-items-center gap-2">
-            <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
-            <span id="user-name" class="small text-white"></span>
+            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;">
+              <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+              <div class="d-flex flex-column">
+                <span id="user-name" class="small text-white fw-bold leading-none"></span>
+                <span id="user-handle" class="text-info" style="font-size: 10px;"></span>
+              </div>
+            </div>
             <button id="logout-btn" class="btn btn-outline-danger btn-sm p-1 px-2" title="تسجيل الخروج">
               <i class="fa-solid fa-right-from-bracket"></i>
             </button>
@@ -87,20 +93,15 @@
           </ul>
 
           <div class="tab-content">
-            <!-- 1. التفاصيل والإعلان -->
             <div class="tab-pane fade show active" id="info-tab-pane">
               <p id="modalOverview" class="text-secondary leading-relaxed"></p>
-              
-              <!-- container التريلر والڤيديو -->
               <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
                 <iframe id="trailerIframe" src="" allowfullscreen></iframe>
               </div>
-
               <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل:</h6>
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- 2. الحلقات والمواسم -->
             <div class="tab-pane fade" id="episodes-tab-pane">
               <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
                 <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
@@ -110,7 +111,76 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Modal البروفايل (Profile Modal) -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-user-gear me-2"></i> الملف الشخصي</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-4">
+            <img id="profile-modal-avatar" src="" class="rounded-circle border border-2 border-info mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+            <h5 id="profile-modal-name" class="fw-bold mb-0"></h5>
+            <span id="profile-modal-username" class="text-info small"></span>
+            <div id="profile-modal-joined" class="text-secondary small mt-1"></div>
+          </div>
+
+          <form id="profile-form">
+            <div class="mb-3">
+              <label class="form-label small text-secondary">اسم المستخدم (Username - لا يتكرر)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$" title="أحرف إنجليزية وأرقام و_ فقط">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">الاسم المستعار (Display Name)</label>
+              <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+            </div>
+
+            <!-- رفع صورة من جهازك أو الألبوم -->
+            <div class="mb-3">
+              <label class="form-label small text-secondary">تغيير الصورة الشخصية (من ملفات جهازك/البوم الصور)</label>
+              <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
+            </div>
+
+            <div id="profile-error" class="text-danger small mb-2 d-none"></div>
+            <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
+
+            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold">حفظ التغييرات</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal إجباري لاختيار Username للمستخدمين الجدد -->
+  <div class="modal fade" id="usernameModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-info">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-id-card me-2"></i> اختر اسم مستعار فريد</h5>
+        </div>
+        <div class="modal-body">
+          <p class="small text-secondary mb-3">مرحباً بك! لإكمال إعداد حسابك، يرجى اختيار Username خاص بك (لا يمكن تكراره ويستخدمه باقي الأعضاء لرؤية بروفايلك).</p>
+          <form id="setup-username-form">
+            <div class="mb-3">
+              <div class="input-group">
+                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                <input type="text" id="setup-username-input" class="form-control bg-dark text-white border-secondary" placeholder="username" required pattern="^[a-zA-Z0-9_]+$" title="أحرف إنجليزية وأرقام و_ فقط">
+              </div>
+            </div>
+            <div id="setup-username-error" class="text-danger small mb-2 d-none"></div>
+            <button type="submit" class="btn btn-info w-100 fw-bold">حفظ ومتابعة</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -121,7 +191,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
@@ -142,6 +212,10 @@
     window.doc = doc;
     window.setDoc = setDoc;
     window.getDoc = getDoc;
+    window.collection = collection;
+    window.query = query;
+    window.where = where;
+    window.getDocs = getDocs;
 
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -150,26 +224,31 @@
     const userName = document.getElementById('user-name');
 
     if (loginBtn) {
-      loginBtn.addEventListener('click', () => {
+      loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         signInWithPopup(auth, provider).catch(err => console.error(err));
       });
     }
 
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         signOut(auth).then(() => location.reload());
       });
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         window.currentUser = user;
         if (loginBtn) loginBtn.classList.add('d-none');
         if (userInfo) userInfo.classList.remove('d-none');
-        if (userAvatar) userAvatar.src = user.photoURL || '';
-        if (userName) userName.textContent = user.displayName || 'مستخدم';
+        
+        // مزامنة البيانات والبروفايل
+        if (typeof window.handleUserLogin === 'function') {
+          await window.handleUserLogin(user);
+        }
         if (typeof window.syncUserDataFromCloud === 'function') {
-          window.syncUserDataFromCloud();
+          await window.syncUserDataFromCloud();
         }
       } else {
         window.currentUser = null;

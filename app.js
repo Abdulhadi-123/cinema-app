@@ -4,6 +4,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 let currentLang = 'ar-SA';
 let currentCategory = 'trending';
+let userProfileData = null;
 
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
@@ -33,7 +34,204 @@ const translations = {
 };
 
 // ==========================================
-// 1️⃣ حفظ البيانات محلياً + السحابياً
+// 1️⃣ إدارة البروفايل والمستخدمين (Profile Engine)
+// ==========================================
+window.handleUserLogin = async function(user) {
+  if (!window.db) return;
+  
+  try {
+    const userDocRef = window.doc(window.db, "users", user.uid);
+    const docSnap = await window.getDoc(userDocRef);
+
+    if (docSnap.exists()) {
+      userProfileData = docSnap.data();
+      if (!userProfileData.username) {
+        showUsernameSetupModal();
+      } else {
+        updateUIWithUserData();
+      }
+    } else {
+      showUsernameSetupModal();
+    }
+  } catch (err) {
+    console.error("خطأ جلب بيانات المستخدم:", err);
+  }
+};
+
+function showUsernameSetupModal() {
+  const modalElem = document.getElementById('usernameModal');
+  if (modalElem) {
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElem);
+    modal.show();
+  }
+}
+
+async function isUsernameTaken(username, currentUid) {
+  const q = window.query(window.collection(window.db, "users"), window.where("username", "==", username.toLowerCase()));
+  const querySnap = await window.getDocs(q);
+  let taken = false;
+  querySnap.forEach(doc => {
+    if (doc.id !== currentUid) taken = true;
+  });
+  return taken;
+}
+
+document.getElementById('setup-username-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('setup-username-input').value.trim().toLowerCase();
+  const errDiv = document.getElementById('setup-username-error');
+  errDiv.classList.add('d-none');
+
+  if (!window.currentUser) return;
+
+  const taken = await isUsernameTaken(input, window.currentUser.uid);
+  if (taken) {
+    errDiv.textContent = 'اسم المستخدم هذا مأخوذ بالفعل! اختر اسماً آخر.';
+    errDiv.classList.remove('d-none');
+    return;
+  }
+
+  const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+  const newProfile = {
+    uid: window.currentUser.uid,
+    username: input,
+    displayName: window.currentUser.displayName || input,
+    avatar: window.currentUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/3172/3172522.png',
+    joinedAt: new Date().toLocaleDateString('ar-SA'),
+    favorites: favorites,
+    watchedList: watchedList,
+    watchedEpisodes: watchedEpisodes
+  };
+
+  await window.setDoc(userDocRef, newProfile, { merge: true });
+  userProfileData = newProfile;
+  
+  bootstrap.Modal.getInstance(document.getElementById('usernameModal')).hide();
+  updateUIWithUserData();
+});
+
+function updateUIWithUserData() {
+  if (!userProfileData) return;
+
+  document.getElementById('login-btn')?.classList.add('d-none');
+  document.getElementById('user-info')?.classList.remove('d-none');
+  
+  const avatarImg = document.getElementById('user-avatar');
+  const nameSpan = document.getElementById('user-name');
+  const handleSpan = document.getElementById('user-handle');
+
+  if (avatarImg) avatarImg.src = userProfileData.avatar;
+  if (nameSpan) nameSpan.textContent = userProfileData.displayName;
+  if (handleSpan) handleSpan.textContent = `@${userProfileData.username}`;
+
+  // تحديث بيانات مودال البروفايل
+  const profAvatar = document.getElementById('profile-modal-avatar');
+  const profName = document.getElementById('profile-modal-name');
+  const profUser = document.getElementById('profile-modal-username');
+  const profJoined = document.getElementById('profile-modal-joined');
+
+  if (profAvatar) profAvatar.src = userProfileData.avatar;
+  if (profName) profName.textContent = userProfileData.displayName;
+  if (profUser) profUser.textContent = `@${userProfileData.username}`;
+  if (profJoined) profJoined.textContent = `انضم في: ${userProfileData.joinedAt || '2026'}`;
+
+  const editUser = document.getElementById('edit-username');
+  const editDisplay = document.getElementById('edit-displayname');
+
+  if (editUser) editUser.value = userProfileData.username;
+  if (editDisplay) editDisplay.value = userProfileData.displayName;
+}
+
+document.getElementById('open-profile-btn')?.addEventListener('click', () => {
+  if (userProfileData) {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('profileModal')).show();
+  }
+});
+
+// تحويل وضغط صورة الجهاز إلى Base64
+function convertFileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 250;
+        const scaleFactor = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleFactor;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+    };
+    reader.onerror = error => reject(error);
+  });
+}
+
+// حفظ تعديلات البروفايل والصورة من الملفات
+document.getElementById('profile-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const newUsername = document.getElementById('edit-username').value.trim().toLowerCase();
+  const newDisplayName = document.getElementById('edit-displayname').value.trim();
+  const fileInput = document.getElementById('edit-avatar-file');
+
+  const errDiv = document.getElementById('profile-error');
+  const succDiv = document.getElementById('profile-success');
+  const saveBtn = document.getElementById('save-profile-btn');
+
+  errDiv.classList.add('d-none');
+  succDiv.classList.add('d-none');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'جاري الحفظ...';
+
+  try {
+    if (newUsername !== userProfileData.username) {
+      const taken = await isUsernameTaken(newUsername, window.currentUser.uid);
+      if (taken) {
+        errDiv.textContent = 'اسم المستخدم هذا مستعمل من قبل شخص آخر!';
+        errDiv.classList.remove('d-none');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'حفظ التغييرات';
+        return;
+      }
+    }
+
+    let finalAvatar = userProfileData.avatar;
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      finalAvatar = await convertFileToBase64(fileInput.files[0]);
+    }
+
+    userProfileData.username = newUsername;
+    userProfileData.displayName = newDisplayName;
+    userProfileData.avatar = finalAvatar;
+
+    const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+    await window.setDoc(userDocRef, {
+      username: newUsername,
+      displayName: newDisplayName,
+      avatar: finalAvatar
+    }, { merge: true });
+
+    succDiv.classList.remove('d-none');
+    updateUIWithUserData();
+    if (fileInput) fileInput.value = '';
+    setTimeout(() => succDiv.classList.add('d-none'), 3000);
+  } catch (error) {
+    console.error("خطأ في حفظ البروفايل:", error);
+    errDiv.textContent = 'حدث خطأ أثناء الحفظ. حاول مرة أخرى.';
+    errDiv.classList.remove('d-none');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ التغييرات';
+  }
+});
+
+// ==========================================
+// 2️⃣ حفظ البيانات محلياً + السحابياً
 // ==========================================
 async function saveData() {
   localStorage.setItem('cinema_favs', JSON.stringify(favorites));
@@ -75,7 +273,7 @@ window.syncUserDataFromCloud = async function() {
 };
 
 // ==========================================
-// 2️⃣ جلب وعرض المحتوى
+// 3️⃣ جلب وعرض المحتوى
 // ==========================================
 function getEndpoint(category, page = 1) {
   if (category === 'movies') return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
@@ -167,7 +365,7 @@ function toggleWatchedMovie(itemId, btn) {
 }
 
 // ==========================================
-// 3️⃣ تفاصيل المودال والترايلر والحلقات
+// 4️⃣ تفاصيل المودال والترايلر والحلقات
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
   const modalElement = document.getElementById('movieDetailModal');
@@ -181,7 +379,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
 
   const epTabLi = document.getElementById('episodes-tab-li');
 
-  // إظهار التبويب الأول بشكل افتراضي
   const infoTabBtn = document.getElementById('info-tab');
   if (infoTabBtn) {
     const tabInstance = bootstrap.Tab.getOrCreateInstance(infoTabBtn);
@@ -191,14 +388,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   modal.show();
 
   try {
-    // 1. جلب بيانات الفيلم/المسلسل
     const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${currentLang}`);
     const data = await res.json();
 
     document.getElementById('modalTitle').textContent = data.title || data.name;
     document.getElementById('modalOverview').textContent = data.overview || 'لا يوجد ملخص متوفر لهذا العمل.';
 
-    // التبديل بين إظهار/إخفاء تبويب الحلقات والمواسم
     if (mediaType === 'movie') {
       if (epTabLi) epTabLi.classList.add('d-none');
     } else {
@@ -206,7 +401,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       setupSeasons(data.seasons || [], itemId);
     }
 
-    // 2. جلب الفيديو الإعلاني (Trailer)
     const vRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     const vData = await vRes.json();
     const videos = vData.results || [];
@@ -217,7 +411,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       document.getElementById('trailerContainer').classList.remove('d-none');
     }
 
-    // 3. جلب طاقم التمثيل
     const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
     const cData = await cRes.json();
     const castContainer = document.getElementById('castContainer');
@@ -321,7 +514,7 @@ function toggleWatchedEp(epKey, btn) {
 }
 
 // ==========================================
-// 4️⃣ المفضلة والتنقل والبحث
+// 5️⃣ المفضلة والتنقل والبحث
 // ==========================================
 function toggleFavorite(item, btn) {
   const idx = favorites.findIndex(f => f.id === item.id);
@@ -405,7 +598,7 @@ if (searchForm) {
 }
 
 // ==========================================
-// 5️⃣ تنظيف خلفية الـ Modal تلقائياً
+// 6️⃣ تنظيف خلفية الـ Modal تلقائياً
 // ==========================================
 function clearModalBackdrop() {
   document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
