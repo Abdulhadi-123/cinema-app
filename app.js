@@ -4,7 +4,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 let currentLang = 'ar-SA';
 let currentCategory = 'trending';
-let currentMediaItem = null;
+let currentMediaItem = null; // يحفظ بيانات العمل الحالي { id, mediaType }
 
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 
@@ -213,7 +213,7 @@ function displayItems(items) {
 }
 
 // ==========================================
-// 📺 تفاصيل العمل والحلقات والتعليقات
+// 📺 تفاصيل العمل، المواسم، والحلقات
 // ==========================================
 
 async function openMovieDetails(itemId, mediaType = 'movie') {
@@ -248,7 +248,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     modalTitle.textContent = detailData.title || detailData.name;
     modalOverview.textContent = detailData.overview || 'لا يوجد ملخص متوفر.';
 
-    // إظهار وإدارة التبويب الخاص بالحلقات إن كان العمل مسلسلاً
+    // إدارة تبويب الحلقات والمواسم في حال كان العمل مسلسلاً
     if (mediaType === 'tv') {
       episodesTabLi.classList.remove('d-none');
       setupSeasonsDropdown(detailData.seasons || [], itemId);
@@ -309,7 +309,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       castContainer.innerHTML = '<span class="text-secondary small">لا يتوفر معلومات عن الممثلين.</span>';
     }
 
-    // جلب التعليقات للفيلم / المسلسل
+    // جلب التعليقات للعمل
     loadComments(itemId);
 
   } catch (error) {
@@ -317,7 +317,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   }
 }
 
-// دالة المواسم
+// دالة إعداد القائمة المنسدلة للمواسم
 function setupSeasonsDropdown(seasons, tvId) {
   const seasonSelect = document.getElementById('seasonSelect');
   seasonSelect.innerHTML = '';
@@ -340,7 +340,7 @@ function setupSeasonsDropdown(seasons, tvId) {
   };
 }
 
-// دالة جلب الحلقات
+// دالة جلب وعرض الحلقات مع دعم تقييم الحلقة بشكل منفصل ⭐️
 async function fetchEpisodes(tvId, seasonNumber) {
   const episodesContainer = document.getElementById('episodesContainer');
   episodesContainer.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
@@ -357,16 +357,38 @@ async function fetchEpisodes(tvId, seasonNumber) {
           : 'https://placehold.co/300x170/1e293b/ffffff?text=No+Image';
 
         episodesContainer.innerHTML += `
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6 mb-2">
             <div class="card bg-dark border-secondary h-100 overflow-hidden">
-              <img src="${epImg}" class="card-img-top" style="height: 140px; object-fit: cover;">
-              <div class="card-body p-2">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
-                  <small class="text-warning fw-bold"><i class="fa-solid fa-star me-1"></i>${ep.vote_average ? ep.vote_average.toFixed(1) : 'N/A'}</small>
+              <img src="${epImg}" class="card-img-top" style="height: 130px; object-fit: cover;">
+              <div class="card-body p-2 d-flex flex-column justify-content-between">
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
+                    <small class="text-warning fw-bold">TMDB: ⭐ ${ep.vote_average ? ep.vote_average.toFixed(1) : 'N/A'}</small>
+                  </div>
+                  <h6 class="card-title text-white fw-bold mb-1 small text-truncate">${ep.name}</h6>
+                  <p class="card-text text-secondary text-truncate" style="font-size: 11px;">${ep.overview || 'لا يوجد وصف للحلقة.'}</p>
                 </div>
-                <h6 class="card-title text-white fw-bold mb-1 small text-truncate">${ep.name}</h6>
-                <p class="card-text text-secondary text-truncate" style="font-size: 11px;">${ep.overview || 'لا يوجد وصف للحلقة.'}</p>
+                
+                <!-- زر تقييم الحلقة للمستخدم -->
+                <div class="mt-2 pt-2 border-top border-secondary d-flex justify-content-between align-items-center">
+                  <small class="text-muted" style="font-size: 10px;">تقييمك للحلقة:</small>
+                  <div class="d-flex align-items-center gap-1">
+                    <select id="ep-rating-${ep.id}" class="form-select form-select-sm bg-dark text-warning border-secondary p-0 px-1" style="font-size: 11px; width: auto;">
+                      <option value="10">⭐ 10</option>
+                      <option value="9">⭐ 9</option>
+                      <option value="8" selected>⭐ 8</option>
+                      <option value="7">⭐ 7</option>
+                      <option value="6">⭐ 6</option>
+                      <option value="5">⭐ 5</option>
+                      <option value="4">⭐ 4</option>
+                      <option value="3">⭐ 3</option>
+                      <option value="2">⭐ 2</option>
+                      <option value="1">⭐ 1</option>
+                    </select>
+                    <button class="btn btn-xs btn-outline-info p-1 py-0 fw-bold" style="font-size: 10px;" onclick="rateSingleEpisode('${tvId}', '${seasonNumber}', '${ep.episode_number}', '${ep.id}')">حفظ</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -380,8 +402,46 @@ async function fetchEpisodes(tvId, seasonNumber) {
   }
 }
 
+// دالة تقييم حلقة منفصلة في Firestore
+async function rateSingleEpisode(tvId, seasonNum, epNum, selectId) {
+  if (!window.currentUser) {
+    alert("عذراً، يجب عليك تسجيل الدخول أولاً لتقييم الحلقة!");
+    return;
+  }
+
+  const ratingVal = document.getElementById(`ep-rating-${selectId}`).value;
+  const docId = `tv_${tvId}_S${seasonNum}_E${epNum}`;
+
+  try {
+    const docRef = window.doc(window.db, "episode_reviews", docId);
+    const newRating = {
+      userId: window.currentUser.uid,
+      userName: window.currentUser.displayName || 'مستخدم',
+      rating: ratingVal,
+      createdAt: new Date().toISOString()
+    };
+
+    const docSnap = await window.getDoc(docRef);
+    let ratings = [];
+    if (docSnap.exists() && docSnap.data().ratings) {
+      ratings = docSnap.data().ratings;
+    }
+
+    // استبدال تقييم المستخدم القديم إن وجد
+    ratings = ratings.filter(r => r.userId !== window.currentUser.uid);
+    ratings.unshift(newRating);
+
+    await window.setDoc(docRef, { ratings: ratings }, { merge: true });
+    alert(`تم حفظ تقييمك (${ratingVal}/10) للحلقة ${epNum} بنجاح! 🎉`);
+  } catch (err) {
+    console.error("خطأ تقييم الحلقة:", err);
+    alert("حدث خطأ أثناء حفظ تقييم الحلقة.");
+  }
+}
+window.rateSingleEpisode = rateSingleEpisode;
+
 // ==========================================
-// 💬 نظام التقييم والتعليقات (Firestore)
+// 💬 نظام التقييم والتعليقات للعمل بالكامل (Firestore)
 // ==========================================
 
 async function loadComments(itemId) {
@@ -424,14 +484,17 @@ async function loadComments(itemId) {
   }
 }
 
+// إضافة نشر التقييم للعمل كاملاً[cite: 2]
 document.getElementById('submitReviewBtn').addEventListener('click', async () => {
   if (!window.currentUser) {
     alert("عذراً، يجب عليك تسجيل الدخول أولاً لإضافة تقييم ورأي!");
     return;
   }
 
-  const commentText = document.getElementById('userCommentInput').value.trim();
-  const ratingVal = document.getElementById('userRatingInput').value;
+  const commentInput = document.getElementById('userCommentInput');
+  const ratingInput = document.getElementById('userRatingInput');
+  const commentText = commentInput.value.trim();
+  const ratingVal = ratingInput.value;
 
   if (!commentText) {
     alert("يرجى كتابة تعليق قبل الإرسال.");
@@ -462,11 +525,12 @@ document.getElementById('submitReviewBtn').addEventListener('click', async () =>
 
     await window.setDoc(docRef, { reviews: existingReviews }, { merge: true });
 
-    document.getElementById('userCommentInput').value = '';
+    commentInput.value = '';
     loadComments(currentMediaItem.id);
+
   } catch (err) {
-    console.error("خطأ إضافة التقييم:", err);
-    alert("حدث خطأ أثناء حفظ تقييمك.");
+    console.error("تفاصيل خطأ إضافة التقييم:", err);
+    alert("حدث خطأ أثناء حفظ تقييمك. اضغط F12 وراجع الـ Console لمعرفة السبب.");
   }
 });
 

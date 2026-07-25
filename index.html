@@ -3,275 +3,170 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="referrer" content="no-referrer" />
-  <!-- PWA Manifest Link -->
+  <title>Cinema App</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
-  <title>متتبع الأفلام والمسلسلات | Movie Tracker</title>
-  <link rel="icon" type="image/png" href="cinema.png">
-  <!-- Bootstrap 5 CSS -->
+
+  <!-- Bootstrap RTL CSS -->
   <link id="bootstrap-link" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
-  <!-- FontAwesome -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- CSS المخصص -->
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-dark text-white">
 
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark py-3 sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold text-info fs-3 me-3" href="#" onclick="loadCategory('trending')">
-        <i class="fa-solid fa-film me-2"></i> <span id="logo-text">سينما</span>
-      </a>
-
+      <a class="navbar-brand fw-bold text-info" href="#" id="logo-text">سينما</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-
+      
       <div class="collapse navbar-collapse" id="navbarNav">
-        <!-- روابط التنقل بين الأقسام -->
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <ul class="navbar-menu nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link active" href="#" id="nav-home" onclick="loadCategory('trending')">الرئيسية (مقترحات)</a>
+            <a class="nav-link text-white active" href="#" id="nav-home" onclick="loadCategory('trending')">الرئيسية</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a>
+            <a class="nav-link text-white" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a>
+            <a class="nav-link text-white" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')">
-              <span id="nav-fav-text">المفضلة</span>
+            <a class="nav-link text-white" href="#" id="nav-favs" onclick="loadCategory('favorites')">
+              <span id="nav-fav-text">المفضلة</span> ❤️
             </a>
           </li>
         </ul>
 
-        <!-- البحث + تغيير اللغة + ملف المستخدم -->
-        <div class="d-flex align-items-center gap-2 flex-wrap mt-2 mt-lg-0">
-          <form class="d-flex" id="search-form">
-            <input class="form-control search-input me-2" type="search" id="search-input" placeholder="ابحث..." aria-label="Search">
-            <button class="btn btn-search fw-bold px-3" type="submit" id="btn-search">بحث</button>
-          </form>
-
-          <!-- زر تغيير اللغة -->
-          <button class="btn btn-outline-light ms-2 fw-bold" id="lang-btn" onclick="toggleLanguage()">English</button>
-
-          <!-- زر تسجيل الدخول / بروفايل المستخدم -->
-          <div id="user-profile" class="ms-2">
-            <button id="login-btn" class="btn btn-primary btn-sm fw-bold">تسجيل الدخول بـ Google</button>
+        <!-- User Profile / Auth Area -->
+        <div id="auth-container" class="d-flex align-items-center gap-2 my-2 my-lg-0 me-3">
+          <button id="login-btn" class="btn btn-outline-info btn-sm">
+            <i class="fa-brands fa-google me-1"></i> دخول
+          </button>
+          <div id="user-info" class="d-none d-flex align-items-center gap-2">
+            <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+            <span id="user-name" class="small text-white"></span>
+            <button id="logout-btn" class="btn btn-outline-danger btn-sm p-1 px-2" title="تسجيل الخروج">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
           </div>
         </div>
+
+        <!-- Search Form -->
+        <form class="d-flex" id="search-form">
+          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم أو مسلسل..." aria-label="Search">
+          <button class="btn btn-outline-info" type="submit" id="btn-search">بحث</button>
+        </form>
+
+        <button class="btn btn-sm btn-secondary ms-2 mt-2 mt-lg-0" id="lang-btn" onclick="toggleLanguage()">English</button>
       </div>
     </div>
   </nav>
 
-  <!-- محتوى الصفحة -->
-  <div class="container my-5">
-    <h3 class="mb-4 border-start border-info border-4 ps-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
-    
-    <!-- شبكة عرض البطاقات -->
-    <div class="row g-4" id="movies-grid"></div>
+  <!-- Main Content -->
+  <div class="container my-4">
+    <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
+    <div class="row" id="movies-grid">
+      <!-- Cards will be inserted here dynamically -->
+    </div>
   </div>
 
-  <!-- Modal تفاصيل الفيلم/المسلسل والتريلر والطاقم والتقييم والحلقات -->
+  <!-- Modal تفاصيل العمل والحلقات والتقييمات -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content text-light" style="background-color: var(--bg-card, #121824); border: 1px solid var(--border-color, #1e293b);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-secondary">
+        
         <div class="modal-header border-secondary">
-          <h5 class="modal-title fw-bold text-info" id="modalTitle">تفاصيل العمل</h5>
+          <h5 class="modal-title fw-bold" id="modalTitle">اسم العمل</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="modal-body p-0">
-          <!-- تبويبات التنقل داخل النافذة -->
-          <ul class="nav nav-tabs nav-justified border-secondary bg-dark sticky-top" id="detailTabs" role="tablist">
+        <div class="modal-body">
+          <!-- التبويبات العلويّة -->
+          <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
             <li class="nav-item" role="presentation">
-              <button class="nav-link active text-info fw-bold" id="info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab">التفاصيل والقصة</button>
+              <button class="nav-link active text-light" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab">التفاصيل والقصة</button>
             </li>
+            <!-- تبويب الحلقات (يظهر مع المسلسلات فقط) -->
             <li class="nav-item d-none" id="episodes-tab-li" role="presentation">
-              <button class="nav-link text-info fw-bold" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#tab-episodes" type="button" role="tab">الحلقات 📺</button>
+              <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane" type="button" role="tab">الحلقات 📺</button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link text-info fw-bold" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#tab-reviews" type="button" role="tab">التقييمات والتعليقات 💬</button>
+              <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab">التقييمات والتعليقات 💬</button>
             </li>
           </ul>
 
-          <div class="tab-content p-3" id="detailTabsContent">
-            <!-- تبويب 1: التفاصيل والقصة -->
-            <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
-              <!-- مشغل التريلر (YouTube) -->
-              <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none">
-                <iframe id="trailerIframe" src="" title="Trailer" allowfullscreen class="rounded-3"></iframe>
+          <!-- محتوى التبويبات -->
+          <div class="tab-content" id="detailTabsContent">
+            
+            <!-- 1. تبويب القصة والإعلان -->
+            <div class="tab-pane fade show active" id="info-tab-pane" role="tabpanel">
+              <p id="modalOverview" class="text-secondary leading-relaxed"></p>
+              <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
+                <iframe id="trailerIframe" src="" allowfullscreen></iframe>
               </div>
-              
-              <!-- ملخص القصة -->
-              <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-align-right me-1"></i> القصة</h6>
-              <p id="modalOverview" class="text-secondary small mb-4"></p>
-
-              <!-- طاقم التمثيل -->
-              <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل</h6>
-              <div id="castContainer" class="d-flex flex-wrap gap-3"></div>
+              <h6 class="fw-bold mt-3 mb-2 text-info">طاقم التمثيل:</h6>
+              <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- تبويب 2: الحلقات (للمسلسلات) -->
-            <div class="tab-pane fade" id="tab-episodes" role="tabpanel">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <label for="seasonSelect" class="fw-bold text-info text-nowrap">اختر الموسم:</label>
-                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-light border-secondary">
-                  <!-- يُحمل عبر JS -->
-                </select>
+            <!-- 2. تبويب الحلقات وتقييم الحلقات 📺 -->
+            <div class="tab-pane fade" id="episodes-tab-pane" role="tabpanel">
+              <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
+                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
+                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
-              <div id="episodesContainer" class="row g-3">
-                <!-- قائمة الحلقات -->
-              </div>
+              <!-- قائمة الحلقات -->
+              <div id="episodesContainer" class="row g-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
 
-            <!-- تبويب 3: التقييم والتعليقات -->
-            <div class="tab-pane fade" id="tab-reviews" role="tabpanel">
-              <!-- قسم إضافة تقييم وتعليق -->
-              <div class="card bg-dark border-secondary p-3 mb-4">
-                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك</h6>
-                <div id="reviewFormContainer">
-                  <div class="mb-3">
-                    <label class="form-label text-secondary small">تقييمك (من 1 إلى 10):</label>
-                    <select id="userRatingInput" class="form-select form-select-sm bg-dark text-light border-secondary w-auto">
-                      <option value="10">⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)</option>
-                      <option value="9">⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)</option>
-                      <option value="8" selected>⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)</option>
-                      <option value="7">⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)</option>
-                      <option value="6">⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)</option>
-                      <option value="5">⭐️⭐️⭐️⭐️⭐️ (5/10)</option>
-                      <option value="4">⭐️⭐️⭐️⭐️ (4/10)</option>
-                      <option value="3">⭐️⭐️⭐️ (3/10)</option>
-                      <option value="2">⭐️⭐️ (2/10)</option>
-                      <option value="1">⭐️ (1/10)</option>
-                    </select>
-                  </div>
-                  <div class="mb-3">
-                    <textarea id="userCommentInput" class="form-control bg-dark text-light border-secondary small" rows="2" placeholder="اكتب رأيك هنا..."></textarea>
-                  </div>
-                  <button id="submitReviewBtn" class="btn btn-sm btn-info fw-bold">نشر التقييم</button>
+            <!-- 3. تبويب التعليقات وتقييم العمل الكامل 💬 -->
+            <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel">
+              <div class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
+                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك للعمل كاملًا:</h6>
+                <div class="mb-2">
+                  <select id="userRatingInput" class="form-select form-select-sm bg-dark text-warning border-secondary w-auto">
+                    <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10/10)</option>
+                    <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9/10)</option>
+                    <option value="8" selected>⭐⭐⭐⭐⭐⭐⭐⭐ (8/10)</option>
+                    <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7/10)</option>
+                    <option value="6">⭐⭐⭐⭐⭐⭐ (6/10)</option>
+                    <option value="5">⭐⭐⭐⭐⭐ (5/10)</option>
+                  </select>
                 </div>
+                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="اكتب رأيك هنا..."></textarea>
+                <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold">نشر التقييم</button>
               </div>
 
-              <!-- عرض قائمة التعليقات -->
-              <h6 class="fw-bold text-info mb-3"><i class="fa-solid fa-comments me-1"></i> آراء المتابعين</h6>
-              <div id="commentsList" class="d-flex flex-column gap-2">
-                <div class="text-secondary small">جاري تحميل التعليقات...</div>
-              </div>
+              <h6 class="fw-bold text-light mb-2"><i class="fa-solid fa-comments me-1"></i> آراء المتابعين:</h6>
+              <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
-          </div>
 
+          </div>
         </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="app-footer text-center py-4 border-top border-secondary mt-auto">
-    <div class="container">
-      <p class="mb-1">
-        تطوير وتصميم بواسطة 
-        <a href="https://github.com/Abdulhadi-123" target="_blank" rel="noopener noreferrer" class="footer-link text-info text-decoration-none">
-          عبدالهادي <i class="fa-brands fa-github ms-1"></i>
-        </a>
-      </p>
-      <small class="text-secondary">&copy; 2026 جميع الحقوق محفوظة - Cinema App</small>
-    </div>
-  </footer>
-
-  <!-- Bootstrap JS -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Firebase SDKs -->
+  <script type="module" src="firebase-config.js"></script>
+  <script src="app.js"></script>
 
-  <!-- Firebase Auth & Firestore Module -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { 
-      getAuth, 
-      GoogleAuthProvider, 
-      signInWithPopup, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      setDoc, 
-      getDoc 
-    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
-      authDomain: "cinema-5321b.firebaseapp.com",
-      projectId: "cinema-5321b",
-      storageBucket: "cinema-5321b.firebasestorage.app",
-      messagingSenderId: "286569379324",
-      appId: "1:286569379324:web:256b0c9d9f04c0d0ccee79",
-      measurementId: "G-BSRJLZXNDC"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
-
-    window.auth = auth;
-    window.db = db;
-    window.doc = doc;
-    window.setDoc = setDoc;
-    window.getDoc = getDoc;
-
-    const userProfile = document.getElementById('user-profile');
-
-    if (userProfile) {
-      userProfile.addEventListener('click', (e) => {
-        if (e.target.closest('#login-btn')) {
-          signInWithPopup(auth, provider);
-        } else if (e.target.closest('#logout-btn')) {
-          signOut(auth);
-        }
-      });
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      if (!userProfile) return;
-
-      if (user) {
-        window.currentUser = user;
-        userProfile.innerHTML = `
-          <div class="d-flex align-items-center gap-2">
-            <img src="${user.photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-            <span class="text-white small fw-bold d-none d-md-inline">${user.displayName}</span>
-            <button id="logout-btn" class="btn btn-sm btn-outline-danger">خروج</button>
-          </div>
-        `;
-        if (typeof syncFavoritesFromCloud === 'function') {
-          syncFavoritesFromCloud();
-        }
-      } else {
-        window.currentUser = null;
-        userProfile.innerHTML = `<button id="login-btn" class="btn btn-primary btn-sm fw-bold">تسجيل الدخول بـ Google</button>`;
-        if (typeof loadLocalFavorites === 'function') {
-          loadLocalFavorites();
-        }
-      }
-    });
-  </script>
-
-  <!-- PWA Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker Registered!'))
-          .catch(err => console.log('Service Worker Failed:', err));
+          .then(reg => console.log('SW Registered'))
+          .catch(err => console.log('SW Reg error:', err));
       });
     }
   </script>
-
-  <!-- App logic -->
-  <script src="app.js"></script>
 </body>
 </html>
