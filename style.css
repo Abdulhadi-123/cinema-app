@@ -12,8 +12,8 @@
 }
 
 body {
-  background-color: var(--bg-main) !important;
-  color: var(--text-main);
+  background-color: #0f172a !important;
+  color: #ffffff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
   display: flex;
@@ -128,6 +128,19 @@ body {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border-color);
+}
+
+/* Modal Tabs styling */
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted) !important;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--accent-color) !important;
+  color: var(--accent-color) !important;
 }
 
 .app-footer {
