@@ -69,7 +69,7 @@ async function saveFavorites() {
   }
 }
 
-// 2. دالة جلب/مزامنة المفضلة من السحابة عند تسجيل الدخول
+// 2. دالة جلب/مزامنة المفضلة من السحابة مع دمج ذكي
 async function syncFavoritesFromCloud() {
   if (window.currentUser && window.db && window.doc && window.getDoc) {
     try {
@@ -77,15 +77,27 @@ async function syncFavoritesFromCloud() {
       const docSnap = await window.getDoc(userDocRef);
 
       if (docSnap.exists() && docSnap.data().favorites) {
-        favorites = docSnap.data().favorites;
-        localStorage.setItem('cinema_favs', JSON.stringify(favorites));
+        const cloudFavs = docSnap.data().favorites || [];
         
-        // إعادة عرض الصفحة بحسب التصنيف الحالي
-        if (currentCategory === 'favorites') {
-          displayFavorites();
-        } else {
-          loadCategory(currentCategory);
-        }
+        // دمج مفضلة الجهاز المحلي مع مفضلة السحابة بدون تكرار
+        const mergedFavs = [...cloudFavs];
+        favorites.forEach(localItem => {
+          if (!mergedFavs.some(cloudItem => cloudItem.id === localItem.id)) {
+            mergedFavs.push(localItem);
+          }
+        });
+
+        favorites = mergedFavs;
+        saveFavorites(); // إعادة حفظ الدمج محلياً وفي السحابة
+      } else if (favorites.length > 0) {
+        // إذا لم توجد مفضلة سحابية ولكن توجد محلياً، أرسلها للسحابة
+        saveFavorites();
+      }
+
+      if (currentCategory === 'favorites') {
+        displayFavorites();
+      } else {
+        loadCategory(currentCategory);
       }
     } catch (error) {
       console.error("خطأ في جلب البيانات من السحابة:", error);
@@ -103,7 +115,7 @@ function loadLocalFavorites() {
   }
 }
 
-// جعل الدوال متاحة على مستوى window لطلبها من index.html
+// جعل الدوال متاحة للنطاق العام window
 window.syncFavoritesFromCloud = syncFavoritesFromCloud;
 window.loadLocalFavorites = loadLocalFavorites;
 
@@ -206,7 +218,7 @@ function displayItems(items) {
   });
 }
 
-// دالة فتح النافذة والتأكد من دعم التضمين
+// دالة فتح النافذة
 async function openMovieDetails(itemId, mediaType = 'movie') {
   const modalElement = document.getElementById('movieDetailModal');
   const modal = new bootstrap.Modal(modalElement);
@@ -295,7 +307,7 @@ document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', 
 });
 
 // ==========================================
-// ❤️ التعديل الخاص بالمفضلة والحفظ السحابي
+// ❤️ المفضلة والتنقل والبحث
 // ==========================================
 
 function toggleFavorite(item, btnElement) {
@@ -330,7 +342,6 @@ function toggleFavorite(item, btnElement) {
     icon.className = 'fa-solid fa-heart';
   }
 
-  // حفظ التغييرات محلياً وفي السحابة
   saveFavorites();
 }
 
@@ -344,7 +355,14 @@ function displayFavorites() {
 
 function loadCategory(category) {
   currentCategory = category;
-  
+
+  // إغلاق Navbar تلقائياً على الهواتف بعد الاختيار
+  const navbarCollapse = document.getElementById('navbarNav');
+  if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+    const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+    if (bsCollapse) bsCollapse.hide();
+  }
+
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
   
   const navHome = document.getElementById('nav-home');
@@ -412,9 +430,18 @@ searchForm.addEventListener('submit', async (e) => {
     sectionTitle.textContent = `${t.searchResults} "${query}"`;
     
     try {
+      moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info" role="status"></div></div>`;
       const res = await fetch(searchUrl);
       const data = await res.json();
-      displayItems(data.results || []);
+      
+      // تصفية النتائج لتشمل الأفلام والمسلسلات فقط
+      const filteredResults = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+      
+      if (filteredResults.length > 0) {
+        displayItems(filteredResults);
+      } else {
+        moviesGrid.innerHTML = `<div class="col-12 text-center text-muted my-5"><h3>${t.noResults}</h3></div>`;
+      }
     } catch (err) {
       console.error(err);
     }
