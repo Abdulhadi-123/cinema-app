@@ -6,7 +6,7 @@
   <title>Cinema App - سينما</title>
 
   <!-- Favicon أيقونة الموقع في التبويب -->
-  <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/3172/3172522.png">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3172/3172522.png">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
 
@@ -84,9 +84,6 @@
             <li class="nav-item d-none" id="episodes-tab-li">
               <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane"><i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم</button>
             </li>
-            <li class="nav-item">
-              <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane"><i class="fa-solid fa-comments me-1"></i> التقييمات والمراجعات</button>
-            </li>
           </ul>
 
           <div class="tab-content">
@@ -100,35 +97,13 @@
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- 2. الحلقات والمواسم (لالمسلسلات) -->
+            <!-- 2. الحلقات والمواسم -->
             <div class="tab-pane fade" id="episodes-tab-pane">
               <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
                 <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
                 <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
               <div id="episodesContainer" class="row g-2" style="max-height: 400px; overflow-y: auto;"></div>
-            </div>
-
-            <!-- 3. المراجعات (للأفلام) -->
-            <div class="tab-pane fade" id="reviews-tab-pane">
-              <div id="movie-rating-section" class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
-                <h6 class="fw-bold text-info mb-2">أضف تقييمك للفيلم:</h6>
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <select id="userRatingInput" class="form-select form-select-sm bg-dark text-warning border-secondary w-auto">
-                    <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10/10)</option>
-                    <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9/10)</option>
-                    <option value="8" selected>⭐⭐⭐⭐⭐⭐⭐⭐ (8/10)</option>
-                    <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7/10)</option>
-                    <option value="6">⭐⭐⭐⭐⭐⭐ (6/10)</option>
-                    <option value="5">⭐⭐⭐⭐⭐ (5/10)</option>
-                  </select>
-                </div>
-                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="اكتب رأيك حول هذا الفيلم..."></textarea>
-                <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold">نشر التقييم</button>
-              </div>
-
-              <h6 class="fw-bold text-light mb-2">مراجعات الجمهور:</h6>
-              <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
           </div>
         </div>
@@ -138,6 +113,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- استدعاء فايربيس أولاً كـ module ثم كود التطبيق الأساسي -->
+  <script type="module" src="./firebase-config.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
