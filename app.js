@@ -50,6 +50,67 @@ const translations = {
   }
 };
 
+// ==========================================
+// ☁️ دوال التعامل مع السحابة (Firebase Firestore)
+// ==========================================
+
+// 1. دالة حفظ المفضلة في السحابة وفي LocalStorage
+async function saveFavorites() {
+  localStorage.setItem('cinema_favs', JSON.stringify(favorites));
+
+  if (window.currentUser && window.db && window.doc && window.setDoc) {
+    try {
+      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+      await window.setDoc(userDocRef, { favorites: favorites }, { merge: true });
+      console.log("تم حفظ المفضلة في السحابة بنجاح! ☁️");
+    } catch (error) {
+      console.error("خطأ في حفظ المفضلة بالسحابة:", error);
+    }
+  }
+}
+
+// 2. دالة جلب/مزامنة المفضلة من السحابة عند تسجيل الدخول
+async function syncFavoritesFromCloud() {
+  if (window.currentUser && window.db && window.doc && window.getDoc) {
+    try {
+      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+      const docSnap = await window.getDoc(userDocRef);
+
+      if (docSnap.exists() && docSnap.data().favorites) {
+        favorites = docSnap.data().favorites;
+        localStorage.setItem('cinema_favs', JSON.stringify(favorites));
+        
+        // إعادة عرض الصفحة بحسب التصنيف الحالي
+        if (currentCategory === 'favorites') {
+          displayFavorites();
+        } else {
+          loadCategory(currentCategory);
+        }
+      }
+    } catch (error) {
+      console.error("خطأ في جلب البيانات من السحابة:", error);
+    }
+  }
+}
+
+// 3. دالة استعادة المفضلة المحلية
+function loadLocalFavorites() {
+  favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
+  if (currentCategory === 'favorites') {
+    displayFavorites();
+  } else {
+    loadCategory(currentCategory);
+  }
+}
+
+// جعل الدوال متاحة على مستوى window لطلبها من index.html
+window.syncFavoritesFromCloud = syncFavoritesFromCloud;
+window.loadLocalFavorites = loadLocalFavorites;
+
+// ==========================================
+// 🎬 دوال عرض الأفلام والبيانات
+// ==========================================
+
 function getEndpoint(category, page = 1) {
   if (category === 'movies') {
     return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
@@ -155,7 +216,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   const trailerIframe = document.getElementById('trailerIframe');
   const castContainer = document.getElementById('castContainer');
 
-  // تنظيف أي أزرار سابقة
   const oldBtn = document.getElementById('direct-yt-btn');
   if (oldBtn) oldBtn.remove();
 
@@ -166,14 +226,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   modal.show();
 
   try {
-    // 1. جلب القصة والتفاصيل
     const detailRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${currentLang}`);
     const detailData = await detailRes.json();
     
     modalTitle.textContent = detailData.title || detailData.name;
     modalOverview.textContent = detailData.overview || 'لا يوجد ملخص متوفر.';
 
-    // 2. جلب الفيديوهات
     let videoRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     let videoData = await videoRes.json();
     let trailers = videoData.results ? videoData.results.filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) : [];
@@ -188,11 +246,9 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       const selectedTrailer = trailers[0];
       const ytLink = `https://www.youtube.com/watch?v=${selectedTrailer.key}`;
 
-      // إضافة مشغل الفيديو وتضمين معالم التشغيل المباشر
       trailerIframe.src = `https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=0&rel=0`;
       trailerContainer.classList.remove('d-none');
 
-      // تصميم كارت أنيق للفتح المباشر دون تشويه المظهر عند وجود حظر من يوتيوب
       const ytBtnHtml = `
         <div id="direct-yt-btn" class="mb-3 text-center">
           <a href="${ytLink}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger px-3 py-2 rounded-pill">
@@ -203,7 +259,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       trailerContainer.insertAdjacentHTML('afterend', ytBtnHtml);
     }
 
-    // 3. جلب طاقم التمثيل
     const creditsRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
     const creditsData = await creditsRes.json();
 
@@ -233,12 +288,15 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   }
 }
 
-// تنظيف النافذة عند إغلاقها
 document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', function () {
   document.getElementById('trailerIframe').src = '';
   const oldBtn = document.getElementById('direct-yt-btn');
   if (oldBtn) oldBtn.remove();
 });
+
+// ==========================================
+// ❤️ التعديل الخاص بالمفضلة والحفظ السحابي
+// ==========================================
 
 function toggleFavorite(item, btnElement) {
   const index = favorites.findIndex(f => f.id === item.id);
@@ -272,7 +330,8 @@ function toggleFavorite(item, btnElement) {
     icon.className = 'fa-solid fa-heart';
   }
 
-  localStorage.setItem('cinema_favs', JSON.stringify(favorites));
+  // حفظ التغييرات محلياً وفي السحابة
+  saveFavorites();
 }
 
 function displayFavorites() {
