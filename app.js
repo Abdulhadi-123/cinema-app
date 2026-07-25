@@ -6,9 +6,8 @@ let currentLang = 'ar-SA';
 let currentCategory = 'trending';
 let currentMediaItem = null;
 
-// التخزين المحلي للمفضلة ولائحة المشاهدة
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
-let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || []; 
+let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
 let watchedEpisodes = JSON.parse(localStorage.getItem('cinema_watched_episodes')) || [];
 
 const moviesGrid = document.getElementById('movies-grid');
@@ -35,52 +34,16 @@ const translations = {
 };
 
 // ==========================================
-// ☁️ دوال الحفظ والمزامنة مع Firestore
+// 1️⃣ حفظ البيانات محلياً
 // ==========================================
-async function saveUserData() {
+function saveData() {
   localStorage.setItem('cinema_favs', JSON.stringify(favorites));
   localStorage.setItem('cinema_watched', JSON.stringify(watchedList));
   localStorage.setItem('cinema_watched_episodes', JSON.stringify(watchedEpisodes));
-
-  if (window.currentUser && window.db && window.doc && window.setDoc) {
-    try {
-      const userRef = window.doc(window.db, "users", window.currentUser.uid);
-      await window.setDoc(userRef, { favorites, watched: watchedList, watchedEpisodes }, { merge: true });
-    } catch (e) {
-      console.error("خطأ بالحفظ السحابي:", e);
-    }
-  }
 }
-
-async function syncUserDataFromCloud() {
-  if (window.currentUser && window.db && window.doc && window.getDoc) {
-    try {
-      const userRef = window.doc(window.db, "users", window.currentUser.uid);
-      const docSnap = await window.getDoc(userRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.favorites) favorites = data.favorites;
-        if (data.watched) watchedList = data.watched;
-        if (data.watchedEpisodes) watchedEpisodes = data.watchedEpisodes;
-        saveUserData();
-      }
-      currentCategory === 'favorites' ? displayFavorites() : loadCategory(currentCategory);
-    } catch (e) {
-      console.error("خطأ مزامنة السحابة:", e);
-    }
-  }
-}
-
-window.syncUserDataFromCloud = syncUserDataFromCloud;
-window.loadLocalFavorites = () => {
-  favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
-  watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
-  watchedEpisodes = JSON.parse(localStorage.getItem('cinema_watched_episodes')) || [];
-  currentCategory === 'favorites' ? displayFavorites() : loadCategory(currentCategory);
-};
 
 // ==========================================
-// 🎬 جلب وعرض المحتوى
+// 2️⃣ جلب وعرض المحتوى
 // ==========================================
 function getEndpoint(category, page = 1) {
   if (category === 'movies') return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
@@ -165,14 +128,14 @@ function toggleWatchedMovie(itemId, btn) {
     watchedList.push(itemId);
     btn.classList.add('active');
   }
-  saveUserData();
+  saveData();
 }
 
 // ==========================================
-// 📺 نافذة التفاصيل، التقييم، والحلقات
+// 3️⃣ تفاصيل المودال والحلقات
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
-  currentMediaItem = { id: itemId, mediaType: mediaType };
+  currentMediaItem = { id: itemId, mediaType };
   
   const modalElement = document.getElementById('movieDetailModal');
   const modal = new bootstrap.Modal(modalElement);
@@ -199,14 +162,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     if (mediaType === 'movie') {
       epTab.classList.add('d-none');
       movieRatingSec.classList.remove('d-none');
-      loadMovieReviews(itemId);
     } else {
       epTab.classList.remove('d-none');
       movieRatingSec.classList.add('d-none');
       setupSeasons(data.seasons || [], itemId);
     }
 
-    // إعلان YouTube
     const vRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     const vData = await vRes.json();
     const trailer = (vData.results || []).find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
@@ -216,7 +177,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       document.getElementById('trailerContainer').classList.remove('d-none');
     }
 
-    // الطاقم
     const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
     const cData = await cRes.json();
     const castContainer = document.getElementById('castContainer');
@@ -235,7 +195,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   }
 }
 
-// المواسم والحلقات
 function setupSeasons(seasons, tvId) {
   const select = document.getElementById('seasonSelect');
   select.innerHTML = '';
@@ -263,130 +222,63 @@ async function fetchEpisodes(tvId, seasonNum) {
       const isWatched = watchedEpisodes.includes(epKey);
       const img = ep.still_path ? `${IMAGE_BASE_URL}${ep.still_path}` : 'https://placehold.co/300x170/1e293b/ffffff?text=No+Image';
 
-      container.innerHTML += `
-        <div class="col-12 col-md-6 mb-2">
-          <div class="card bg-dark border-secondary h-100 overflow-hidden">
-            <div class="position-relative">
-              <img src="${img}" class="card-img-top" style="height: 120px; object-fit: cover;">
-              <button class="btn btn-sm ${isWatched ? 'btn-success' : 'btn-dark opacity-75'} position-absolute top-0 end-0 m-2" onclick="toggleWatchedEp('${epKey}', this)">
-                <i class="fa-solid ${isWatched ? 'fa-check-double' : 'fa-check'}"></i>
-              </button>
+      const epCol = document.createElement('div');
+      epCol.className = 'col-12 col-md-6 mb-2';
+      epCol.innerHTML = `
+        <div class="card bg-dark border-secondary h-100 overflow-hidden">
+          <div class="position-relative">
+            <img src="${img}" class="card-img-top" style="height: 120px; object-fit: cover;">
+            <button class="btn btn-sm ${isWatched ? 'btn-success' : 'btn-dark opacity-75'} position-absolute top-0 end-0 m-2 btn-ep-watch">
+              <i class="fa-solid ${isWatched ? 'fa-check-double' : 'fa-check'}"></i>
+            </button>
+          </div>
+          <div class="card-body p-2 d-flex flex-column justify-content-between">
+            <div>
+              <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
+              <h6 class="card-title text-white fw-bold my-1 small text-truncate">${ep.name}</h6>
             </div>
-            <div class="card-body p-2 d-flex flex-column justify-content-between">
-              <div>
-                <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
-                <h6 class="card-title text-white fw-bold my-1 small text-truncate">${ep.name}</h6>
-              </div>
-              <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary">
-                <small class="text-muted" style="font-size: 10px;">تقييم الحلقة:</small>
-                <div class="d-flex gap-1">
-                  <select id="ep-rate-${ep.id}" class="form-select form-select-sm bg-dark text-warning border-secondary p-0 px-1" style="font-size: 11px;">
-                    <option value="10">⭐ 10</option><option value="9">⭐ 9</option>
-                    <option value="8" selected>⭐ 8</option><option value="7">⭐ 7</option>
-                    <option value="6">⭐ 6</option><option value="5">⭐ 5</option>
-                  </select>
-                  <button class="btn btn-xs btn-outline-info p-1 py-0" style="font-size: 10px;" onclick="rateEpisode('${tvId}', '${seasonNum}', '${ep.episode_number}', '${ep.id}')">حفظ</button>
-                </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary">
+              <small class="text-muted" style="font-size: 10px;">تقييم الحلقة:</small>
+              <div class="d-flex gap-1">
+                <select id="ep-rate-${ep.id}" class="form-select form-select-sm bg-dark text-warning border-secondary p-0 px-1" style="font-size: 11px;">
+                  <option value="10">⭐ 10</option><option value="9">⭐ 9</option>
+                  <option value="8" selected>⭐ 8</option><option value="7">⭐ 7</option>
+                  <option value="6">⭐ 6</option><option value="5">⭐ 5</option>
+                </select>
+                <button class="btn btn-xs btn-outline-info p-1 py-0 btn-ep-rate" style="font-size: 10px;">حفظ</button>
               </div>
             </div>
           </div>
         </div>
       `;
+
+      epCol.querySelector('.btn-ep-watch').addEventListener('click', (e) => {
+        toggleWatchedEp(epKey, e.currentTarget);
+      });
+
+      container.appendChild(epCol);
     });
   } catch (e) {
     console.error(e);
   }
 }
 
-window.toggleWatchedEp = (epKey, btn) => {
+function toggleWatchedEp(epKey, btn) {
   const idx = watchedEpisodes.indexOf(epKey);
   if (idx > -1) {
     watchedEpisodes.splice(idx, 1);
-    btn.className = 'btn btn-sm btn-dark opacity-75 position-absolute top-0 end-0 m-2';
+    btn.className = 'btn btn-sm btn-dark opacity-75 position-absolute top-0 end-0 m-2 btn-ep-watch';
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
   } else {
     watchedEpisodes.push(epKey);
-    btn.className = 'btn btn-sm btn-success position-absolute top-0 end-0 m-2';
+    btn.className = 'btn btn-sm btn-success position-absolute top-0 end-0 m-2 btn-ep-watch';
     btn.innerHTML = '<i class="fa-solid fa-check-double"></i>';
   }
-  saveUserData();
-};
-
-window.rateEpisode = async (tvId, seasonNum, epNum, epId) => {
-  if (!window.currentUser) return alert("يرجى تسجيل الدخول لتقييم الحلقة!");
-  const val = document.getElementById(`ep-rate-${epId}`).value;
-  try {
-    const docRef = window.doc(window.db, "episode_reviews", `tv_${tvId}_S${seasonNum}_E${epNum}`);
-    await window.setDoc(docRef, {
-      ratings: [{ userId: window.currentUser.uid, userName: window.currentUser.displayName || 'مستخدم', rating: val }]
-    }, { merge: true });
-    alert(`تم حفظ تقييم الحلقة (${val}/10) بنجاح! 🎉`);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-// ==========================================
-// 💬 مراجعات الفيلم فقط
-// ==========================================
-async function loadMovieReviews(movieId) {
-  const list = document.getElementById('commentsList');
-  list.innerHTML = '<span class="text-secondary small">جاري تحميل التقييمات...</span>';
-
-  if (!window.db) return list.innerHTML = '<span class="text-secondary small">يتطلب الاتصال بـ Firebase.</span>';
-
-  try {
-    const snap = await window.getDoc(window.doc(window.db, "media_reviews", String(movieId)));
-    if (snap.exists() && snap.data().reviews?.length > 0) {
-      list.innerHTML = '';
-      snap.data().reviews.forEach(r => {
-        list.innerHTML += `
-          <div class="p-2 rounded bg-dark border border-secondary mb-1">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-bold small text-light">${r.userName}</span>
-              <span class="badge bg-warning text-dark">⭐ ${r.rating}/10</span>
-            </div>
-            <p class="mb-0 text-secondary small mt-1">${r.comment}</p>
-          </div>
-        `;
-      });
-    } else {
-      list.innerHTML = '<span class="text-secondary small">لا توجد تقييمات لهذا الفيلم بعد! 🚀</span>';
-    }
-  } catch (e) {
-    list.innerHTML = '<span class="text-secondary small">خطأ بجلب التقييمات.</span>';
-  }
+  saveData();
 }
 
-document.getElementById('submitReviewBtn')?.addEventListener('click', async () => {
-  if (!window.currentUser) return alert("يرجى تسجيل الدخول لتقييم الفيلم!");
-  const comment = document.getElementById('userCommentInput').value.trim();
-  const rating = document.getElementById('userRatingInput').value;
-
-  if (!comment) return alert("يرجى كتابة تعليق قبل الإرسال.");
-  if (!currentMediaItem || currentMediaItem.mediaType !== 'movie') return;
-
-  try {
-    const docRef = window.doc(window.db, "media_reviews", String(currentMediaItem.id));
-    const snap = await window.getDoc(docRef);
-    let reviews = snap.exists() ? snap.data().reviews || [] : [];
-    
-    reviews.unshift({
-      userId: window.currentUser.uid,
-      userName: window.currentUser.displayName || 'مستخدم',
-      rating, comment, createdAt: new Date().toISOString()
-    });
-
-    await window.setDoc(docRef, { reviews }, { merge: true });
-    document.getElementById('userCommentInput').value = '';
-    loadMovieReviews(currentMediaItem.id);
-  } catch (e) {
-    console.error(e);
-  }
-});
-
 // ==========================================
-// ❤️ المفضلة، اللغات، والتنقل
+// 4️⃣ المفضلة والتنقل
 // ==========================================
 function toggleFavorite(item, btn) {
   const idx = favorites.findIndex(f => f.id === item.id);
@@ -403,7 +295,7 @@ function toggleFavorite(item, btn) {
     btn.classList.add('active');
     btn.querySelector('i').className = 'fa-solid fa-heart';
   }
-  saveUserData();
+  saveData();
 }
 
 function displayFavorites() {
@@ -427,6 +319,8 @@ function loadCategory(category) {
   category === 'favorites' ? displayFavorites() : fetchMultiplePages(category);
 }
 
+window.loadCategory = loadCategory;
+
 function toggleLanguage() {
   currentLang = currentLang === 'ar-SA' ? 'en-US' : 'ar-SA';
   document.getElementById('html-tag').setAttribute('dir', currentLang === 'en-US' ? 'ltr' : 'rtl');
@@ -447,6 +341,8 @@ function toggleLanguage() {
   loadCategory(currentCategory);
 }
 
+window.toggleLanguage = toggleLanguage;
+
 searchForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
@@ -463,7 +359,7 @@ searchForm.addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// 🧹 حل مشكلة تعليق الخلفية الرمادية تلقائياً
+// 5️⃣ تنظيف خلفية الـ Modal المظلمة تلقائياً
 // ==========================================
 function clearModalBackdrop() {
   document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
