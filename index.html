@@ -20,7 +20,7 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold text-info d-flex align-items-center gap-2" href="#">
+      <a class="navbar-brand fw-bold text-info d-flex align-items-center gap-2" href="#" onclick="loadCategory('trending')">
         <i class="fa-solid fa-film text-info fs-4"></i>
         <span id="logo-text">سينما</span>
       </a>
@@ -44,7 +44,7 @@
           </button>
           
           <div id="user-info" class="d-none d-flex align-items-center gap-2">
-            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;">
+            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;" onclick="openProfilePage()">
               <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
               <div class="d-flex flex-column">
                 <span id="user-name" class="small text-white fw-bold leading-none"></span>
@@ -67,10 +67,82 @@
     </div>
   </nav>
 
-  <!-- Container المحتوى -->
-  <div class="container my-4">
+  <!-- Container المحتوى الرئيسي -->
+  <div class="container my-4" id="main-content-area">
     <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
-    <div class="row" id="movies-grid"></div>
+    <div class="row g-3" id="movies-grid"></div>
+  </div>
+
+  <!-- صفحة البروفايل المستقلة (تظهر عند الضغط على البروفايل) -->
+  <div class="container my-4 d-none" id="profile-page-area">
+    <button class="btn btn-outline-secondary btn-sm mb-3" onclick="loadCategory('trending')">
+      <i class="fa-solid fa-arrow-right me-1"></i> العودة للرئيسية
+    </button>
+    
+    <div class="row">
+      <!-- معلومات البروفايل والتعديل -->
+      <div class="col-md-4 mb-4">
+        <div class="p-4 bg-secondary bg-opacity-10 border border-secondary rounded">
+          <div class="text-center mb-3">
+            <img id="profile-page-avatar" src="" class="rounded-circle border border-2 border-info mb-2" style="width: 90px; height: 90px; object-fit: cover;">
+            <h5 id="profile-page-name" class="fw-bold mb-0"></h5>
+            <span id="profile-page-username" class="text-info small"></span>
+            <div id="profile-page-joined" class="text-secondary small mt-1"></div>
+          </div>
+
+          <form id="profile-form">
+            <div class="mb-3">
+              <label class="form-label small text-secondary">اسم المستخدم (Username)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">الاسم المستعار</label>
+              <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">تغيير الصورة الشخصية</label>
+              <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
+            </div>
+
+            <div id="profile-error" class="text-danger small mb-2 d-none"></div>
+            <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
+
+            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
+          </form>
+
+          <div class="border-top border-secondary pt-3 mt-3">
+            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> إحصائياتك:</h6>
+            <div class="row text-center g-2">
+              <div class="col-6">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">المفضلة</div>
+                  <div id="stat-fav-count" class="fw-bold text-white fs-5">0</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">الحلقات المتابعة</div>
+                  <div id="stat-ep-count" class="fw-bold text-white fs-5">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- عرض قوائم المتابعة والمشاهدة الخاصة بالمستخدم -->
+      <div class="col-md-8">
+        <h4 class="fw-bold mb-3 text-info"><i class="fa-solid fa-eye me-2"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h4>
+        <div class="row g-2" id="profile-watched-grid">
+          <!-- الكاردز الصغيرة هنا -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal تفاصيل العمل -->
@@ -115,71 +187,6 @@
     </div>
   </div>
 
-  <!-- Modal البروفايل (Profile Modal) -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content bg-dark text-white border-secondary">
-        <div class="modal-header border-secondary">
-          <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-user-gear me-2"></i> الملف الشخصي</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="text-center mb-4">
-            <img id="profile-modal-avatar" src="" class="rounded-circle border border-2 border-info mb-2" style="width: 80px; height: 80px; object-fit: cover;">
-            <h5 id="profile-modal-name" class="fw-bold mb-0"></h5>
-            <span id="profile-modal-username" class="text-info small"></span>
-            <div id="profile-modal-joined" class="text-secondary small mt-1"></div>
-          </div>
-
-          <form id="profile-form">
-            <div class="mb-3">
-              <label class="form-label small text-secondary">اسم المستخدم (Username - لا يتكرر)</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
-                <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$" title="أحرف إنجليزية وأرقام و_ فقط">
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small text-secondary">الاسم المستعار (Display Name)</label>
-              <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
-            </div>
-
-            <!-- رفع صورة من جهازك أو الألبوم -->
-            <div class="mb-3">
-              <label class="form-label small text-secondary">تغيير الصورة الشخصية (من ملفات جهازك/البوم الصور)</label>
-              <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
-            </div>
-
-            <div id="profile-error" class="text-danger small mb-2 d-none"></div>
-            <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
-
-            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
-          </form>
-
-          <!-- قسم إحصائيات المشاهدة والحلقات -->
-          <div class="border-top border-secondary pt-3 mt-3">
-            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> إحصائيات المشاهدة الخاصة بك:</h6>
-            <div class="row text-center g-2">
-              <div class="col-6">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded">
-                  <div class="text-secondary" style="font-size: 11px;">الأفلام/العناصر المفضلة</div>
-                  <div id="stat-fav-count" class="fw-bold text-white fs-5">0</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded">
-                  <div class="text-secondary" style="font-size: 11px;">الحلقات المشاهدة</div>
-                  <div id="stat-ep-count" class="fw-bold text-white fs-5">0</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal إجباري لاختيار Username للمستخدمين الجدد -->
   <div class="modal fade" id="usernameModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -188,12 +195,12 @@
           <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-id-card me-2"></i> اختر اسم مستعار فريد</h5>
         </div>
         <div class="modal-body">
-          <p class="small text-secondary mb-3">مرحباً بك! لإكمال إعداد حسابك، يرجى اختيار Username خاص بك (لا يمكن تكراره ويستخدمه باقي الأعضاء لرؤية بروفايلك).</p>
+          <p class="small text-secondary mb-3">مرحباً بك! لإكمال إعداد حسابك، يرجى اختيار Username خاص بك.</p>
           <form id="setup-username-form">
             <div class="mb-3">
               <div class="input-group">
                 <span class="input-group-text bg-secondary border-secondary text-white">@</span>
-                <input type="text" id="setup-username-input" class="form-control bg-dark text-white border-secondary" placeholder="username" required pattern="^[a-zA-Z0-9_]+$" title="أحرف إنجليزية وأرقام و_ فقط">
+                <input type="text" id="setup-username-input" class="form-control bg-dark text-white border-secondary" placeholder="username" required pattern="^[a-zA-Z0-9_]+$">
               </div>
             </div>
             <div id="setup-username-error" class="text-danger small mb-2 d-none"></div>
@@ -239,8 +246,6 @@
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userInfo = document.getElementById('user-info');
-    const userAvatar = document.getElementById('user-avatar');
-    const userName = document.getElementById('user-name');
 
     if (loginBtn) {
       loginBtn.addEventListener('click', (e) => {
@@ -262,7 +267,6 @@
         if (loginBtn) loginBtn.classList.add('d-none');
         if (userInfo) userInfo.classList.remove('d-none');
         
-        // مزامنة البيانات والبروفايل
         if (typeof window.handleUserLogin === 'function') {
           await window.handleUserLogin(user);
         }
