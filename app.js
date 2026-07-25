@@ -4,6 +4,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 let currentLang = 'ar-SA';
 let currentCategory = 'trending';
+let currentMediaItem = null;
 
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 
@@ -54,7 +55,6 @@ const translations = {
 // ☁️ دوال التعامل مع السحابة (Firebase Firestore)
 // ==========================================
 
-// 1. دالة حفظ المفضلة في السحابة وفي LocalStorage
 async function saveFavorites() {
   localStorage.setItem('cinema_favs', JSON.stringify(favorites));
 
@@ -62,14 +62,12 @@ async function saveFavorites() {
     try {
       const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
       await window.setDoc(userDocRef, { favorites: favorites }, { merge: true });
-      console.log("تم حفظ المفضلة في السحابة بنجاح! ☁️");
     } catch (error) {
       console.error("خطأ في حفظ المفضلة بالسحابة:", error);
     }
   }
 }
 
-// 2. دالة جلب/مزامنة المفضلة من السحابة مع دمج ذكي
 async function syncFavoritesFromCloud() {
   if (window.currentUser && window.db && window.doc && window.getDoc) {
     try {
@@ -79,7 +77,6 @@ async function syncFavoritesFromCloud() {
       if (docSnap.exists() && docSnap.data().favorites) {
         const cloudFavs = docSnap.data().favorites || [];
         
-        // دمج مفضلة الجهاز المحلي مع مفضلة السحابة بدون تكرار
         const mergedFavs = [...cloudFavs];
         favorites.forEach(localItem => {
           if (!mergedFavs.some(cloudItem => cloudItem.id === localItem.id)) {
@@ -88,9 +85,8 @@ async function syncFavoritesFromCloud() {
         });
 
         favorites = mergedFavs;
-        saveFavorites(); // إعادة حفظ الدمج محلياً وفي السحابة
+        saveFavorites();
       } else if (favorites.length > 0) {
-        // إذا لم توجد مفضلة سحابية ولكن توجد محلياً، أرسلها للسحابة
         saveFavorites();
       }
 
@@ -105,7 +101,6 @@ async function syncFavoritesFromCloud() {
   }
 }
 
-// 3. دالة استعادة المفضلة المحلية
 function loadLocalFavorites() {
   favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
   if (currentCategory === 'favorites') {
@@ -115,7 +110,6 @@ function loadLocalFavorites() {
   }
 }
 
-// جعل الدوال متاحة للنطاق العام window
 window.syncFavoritesFromCloud = syncFavoritesFromCloud;
 window.loadLocalFavorites = loadLocalFavorites;
 
@@ -218,8 +212,13 @@ function displayItems(items) {
   });
 }
 
-// دالة فتح النافذة
+// ==========================================
+// 📺 تفاصيل العمل والحلقات والتعليقات
+// ==========================================
+
 async function openMovieDetails(itemId, mediaType = 'movie') {
+  currentMediaItem = { id: itemId, mediaType: mediaType };
+  
   const modalElement = document.getElementById('movieDetailModal');
   const modal = new bootstrap.Modal(modalElement);
   const modalTitle = document.getElementById('modalTitle');
@@ -227,6 +226,11 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   const trailerContainer = document.getElementById('trailerContainer');
   const trailerIframe = document.getElementById('trailerIframe');
   const castContainer = document.getElementById('castContainer');
+  const episodesTabLi = document.getElementById('episodes-tab-li');
+
+  // إعادة ضبط التبويب للقصة تلقائياً
+  const infoTab = new bootstrap.Tab(document.getElementById('info-tab'));
+  infoTab.show();
 
   const oldBtn = document.getElementById('direct-yt-btn');
   if (oldBtn) oldBtn.remove();
@@ -244,6 +248,15 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     modalTitle.textContent = detailData.title || detailData.name;
     modalOverview.textContent = detailData.overview || 'لا يوجد ملخص متوفر.';
 
+    // إظهار وإدارة التبويب الخاص بالحلقات إن كان العمل مسلسلاً
+    if (mediaType === 'tv') {
+      episodesTabLi.classList.remove('d-none');
+      setupSeasonsDropdown(detailData.seasons || [], itemId);
+    } else {
+      episodesTabLi.classList.add('d-none');
+    }
+
+    // جلب التريلر
     let videoRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     let videoData = await videoRes.json();
     let trailers = videoData.results ? videoData.results.filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) : [];
@@ -271,6 +284,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       trailerContainer.insertAdjacentHTML('afterend', ytBtnHtml);
     }
 
+    // جلب طاقم التمثيل
     const creditsRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
     const creditsData = await creditsRes.json();
 
@@ -284,7 +298,7 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
           : 'https://placehold.co/100x100/1e293b/ffffff?text=User';
 
         castContainer.innerHTML += `
-          <div class="actor-card">
+          <div class="actor-card text-center">
             <img src="${actorImg}" class="actor-img mb-1" alt="${actor.name}">
             <div class="small fw-bold text-truncate text-white" style="font-size: 11px;">${actor.name}</div>
             <div class="text-muted text-truncate" style="font-size: 10px;">${actor.character || ''}</div>
@@ -295,10 +309,166 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       castContainer.innerHTML = '<span class="text-secondary small">لا يتوفر معلومات عن الممثلين.</span>';
     }
 
+    // جلب التعليقات للفيلم / المسلسل
+    loadComments(itemId);
+
   } catch (error) {
-    console.error("Error fetching movie details:", error);
+    console.error("Error fetching details:", error);
   }
 }
+
+// دالة المواسم
+function setupSeasonsDropdown(seasons, tvId) {
+  const seasonSelect = document.getElementById('seasonSelect');
+  seasonSelect.innerHTML = '';
+
+  const validSeasons = seasons.filter(s => s.season_number > 0);
+
+  validSeasons.forEach(s => {
+    const option = document.createElement('option');
+    option.value = s.season_number;
+    option.textContent = `${s.name} (${s.episode_count} الحلقة)`;
+    seasonSelect.appendChild(option);
+  });
+
+  if (validSeasons.length > 0) {
+    fetchEpisodes(tvId, validSeasons[0].season_number);
+  }
+
+  seasonSelect.onchange = (e) => {
+    fetchEpisodes(tvId, e.target.value);
+  };
+}
+
+// دالة جلب الحلقات
+async function fetchEpisodes(tvId, seasonNumber) {
+  const episodesContainer = document.getElementById('episodesContainer');
+  episodesContainer.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
+
+  try {
+    const res = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}&language=${currentLang}`);
+    const data = await res.json();
+
+    episodesContainer.innerHTML = '';
+    if (data.episodes && data.episodes.length > 0) {
+      data.episodes.forEach(ep => {
+        let epImg = ep.still_path 
+          ? `${IMAGE_BASE_URL}${ep.still_path}`
+          : 'https://placehold.co/300x170/1e293b/ffffff?text=No+Image';
+
+        episodesContainer.innerHTML += `
+          <div class="col-12 col-md-6">
+            <div class="card bg-dark border-secondary h-100 overflow-hidden">
+              <img src="${epImg}" class="card-img-top" style="height: 140px; object-fit: cover;">
+              <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
+                  <small class="text-warning fw-bold"><i class="fa-solid fa-star me-1"></i>${ep.vote_average ? ep.vote_average.toFixed(1) : 'N/A'}</small>
+                </div>
+                <h6 class="card-title text-white fw-bold mb-1 small text-truncate">${ep.name}</h6>
+                <p class="card-text text-secondary text-truncate" style="font-size: 11px;">${ep.overview || 'لا يوجد وصف للحلقة.'}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    } else {
+      episodesContainer.innerHTML = `<div class="col-12 text-center text-muted py-3">لا توجد معلومات عن الحلقات</div>`;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// ==========================================
+// 💬 نظام التقييم والتعليقات (Firestore)
+// ==========================================
+
+async function loadComments(itemId) {
+  const commentsList = document.getElementById('commentsList');
+  commentsList.innerHTML = '<span class="text-secondary small">جاري تحميل التعليقات...</span>';
+
+  if (!window.db || !window.doc || !window.getDoc) {
+    commentsList.innerHTML = '<span class="text-secondary small">يتطلب الاتصال بـ Firebase لعرض التعليقات.</span>';
+    return;
+  }
+
+  try {
+    const docRef = window.doc(window.db, "media_reviews", String(itemId));
+    const docSnap = await window.getDoc(docRef);
+
+    if (docSnap.exists() && docSnap.data().reviews && docSnap.data().reviews.length > 0) {
+      commentsList.innerHTML = '';
+      const reviews = docSnap.data().reviews;
+
+      reviews.forEach(r => {
+        commentsList.innerHTML += `
+          <div class="p-2 rounded bg-dark border border-secondary">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${r.photoURL || 'https://placehold.co/30x30/1e293b/ffffff?text=U'}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                <span class="fw-bold small text-light">${r.userName}</span>
+              </div>
+              <span class="badge bg-warning text-dark">⭐️ ${r.rating}/10</span>
+            </div>
+            <p class="mb-0 text-secondary small ps-4">${r.comment}</p>
+          </div>
+        `;
+      });
+    } else {
+      commentsList.innerHTML = '<span class="text-secondary small">لا توجد تعليقات بعد، كن أول من يضيف رأيه! 🚀</span>';
+    }
+  } catch (err) {
+    console.error("خطأ جلب التعليقات:", err);
+    commentsList.innerHTML = '<span class="text-secondary small">حدث خطأ أثناء جلب التعليقات.</span>';
+  }
+}
+
+document.getElementById('submitReviewBtn').addEventListener('click', async () => {
+  if (!window.currentUser) {
+    alert("عذراً، يجب عليك تسجيل الدخول أولاً لإضافة تقييم ورأي!");
+    return;
+  }
+
+  const commentText = document.getElementById('userCommentInput').value.trim();
+  const ratingVal = document.getElementById('userRatingInput').value;
+
+  if (!commentText) {
+    alert("يرجى كتابة تعليق قبل الإرسال.");
+    return;
+  }
+
+  if (!currentMediaItem) return;
+
+  const newReview = {
+    userId: window.currentUser.uid,
+    userName: window.currentUser.displayName || 'مستخدم',
+    photoURL: window.currentUser.photoURL || '',
+    rating: ratingVal,
+    comment: commentText,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    const docRef = window.doc(window.db, "media_reviews", String(currentMediaItem.id));
+    const docSnap = await window.getDoc(docRef);
+    let existingReviews = [];
+
+    if (docSnap.exists() && docSnap.data().reviews) {
+      existingReviews = docSnap.data().reviews;
+    }
+
+    existingReviews.unshift(newReview);
+
+    await window.setDoc(docRef, { reviews: existingReviews }, { merge: true });
+
+    document.getElementById('userCommentInput').value = '';
+    loadComments(currentMediaItem.id);
+  } catch (err) {
+    console.error("خطأ إضافة التقييم:", err);
+    alert("حدث خطأ أثناء حفظ تقييمك.");
+  }
+});
 
 document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', function () {
   document.getElementById('trailerIframe').src = '';
@@ -356,7 +526,6 @@ function displayFavorites() {
 function loadCategory(category) {
   currentCategory = category;
 
-  // إغلاق Navbar تلقائياً على الهواتف بعد الاختيار
   const navbarCollapse = document.getElementById('navbarNav');
   if (navbarCollapse && navbarCollapse.classList.contains('show')) {
     const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
@@ -434,7 +603,6 @@ searchForm.addEventListener('submit', async (e) => {
       const res = await fetch(searchUrl);
       const data = await res.json();
       
-      // تصفية النتائج لتشمل الأفلام والمسلسلات فقط
       const filteredResults = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
       
       if (filteredResults.length > 0) {

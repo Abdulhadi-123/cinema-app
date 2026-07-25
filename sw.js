@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cinema-app-v1';
+const CACHE_NAME = 'cinema-app-v2';
 const urlsToCache = [
   './',
   './index.html',

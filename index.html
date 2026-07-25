@@ -75,27 +75,95 @@
     <div class="row g-4" id="movies-grid"></div>
   </div>
 
-  <!-- Modal تفاصيل الفيلم/المسلسل والتريلر والطاقم -->
+  <!-- Modal تفاصيل الفيلم/المسلسل والتريلر والطاقم والتقييم والحلقات -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content text-light" style="background-color: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155);">
-        <div class="modal-header" style="border-bottom-color: var(--border-color, #334155);">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content text-light" style="background-color: var(--bg-card, #121824); border: 1px solid var(--border-color, #1e293b);">
+        <div class="modal-header border-secondary">
           <h5 class="modal-title fw-bold text-info" id="modalTitle">تفاصيل العمل</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <!-- مشغل التريلر (YouTube) -->
-          <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none">
-            <iframe id="trailerIframe" src="" title="Trailer" allowfullscreen class="rounded-3"></iframe>
-          </div>
-          
-          <!-- ملخص القصة -->
-          <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-align-right me-1"></i> القصة</h6>
-          <p id="modalOverview" class="text-secondary small mb-4"></p>
 
-          <!-- طاقم التمثيل -->
-          <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل</h6>
-          <div id="castContainer" class="d-flex flex-wrap gap-3"></div>
+        <div class="modal-body p-0">
+          <!-- تبويبات التنقل داخل النافذة -->
+          <ul class="nav nav-tabs nav-justified border-secondary bg-dark sticky-top" id="detailTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active text-info fw-bold" id="info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab">التفاصيل والقصة</button>
+            </li>
+            <li class="nav-item d-none" id="episodes-tab-li" role="presentation">
+              <button class="nav-link text-info fw-bold" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#tab-episodes" type="button" role="tab">الحلقات 📺</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link text-info fw-bold" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#tab-reviews" type="button" role="tab">التقييمات والتعليقات 💬</button>
+            </li>
+          </ul>
+
+          <div class="tab-content p-3" id="detailTabsContent">
+            <!-- تبويب 1: التفاصيل والقصة -->
+            <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+              <!-- مشغل التريلر (YouTube) -->
+              <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none">
+                <iframe id="trailerIframe" src="" title="Trailer" allowfullscreen class="rounded-3"></iframe>
+              </div>
+              
+              <!-- ملخص القصة -->
+              <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-align-right me-1"></i> القصة</h6>
+              <p id="modalOverview" class="text-secondary small mb-4"></p>
+
+              <!-- طاقم التمثيل -->
+              <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل</h6>
+              <div id="castContainer" class="d-flex flex-wrap gap-3"></div>
+            </div>
+
+            <!-- تبويب 2: الحلقات (للمسلسلات) -->
+            <div class="tab-pane fade" id="tab-episodes" role="tabpanel">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <label for="seasonSelect" class="fw-bold text-info text-nowrap">اختر الموسم:</label>
+                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-light border-secondary">
+                  <!-- يُحمل عبر JS -->
+                </select>
+              </div>
+              <div id="episodesContainer" class="row g-3">
+                <!-- قائمة الحلقات -->
+              </div>
+            </div>
+
+            <!-- تبويب 3: التقييم والتعليقات -->
+            <div class="tab-pane fade" id="tab-reviews" role="tabpanel">
+              <!-- قسم إضافة تقييم وتعليق -->
+              <div class="card bg-dark border-secondary p-3 mb-4">
+                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك</h6>
+                <div id="reviewFormContainer">
+                  <div class="mb-3">
+                    <label class="form-label text-secondary small">تقييمك (من 1 إلى 10):</label>
+                    <select id="userRatingInput" class="form-select form-select-sm bg-dark text-light border-secondary w-auto">
+                      <option value="10">⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)</option>
+                      <option value="9">⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)</option>
+                      <option value="8" selected>⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)</option>
+                      <option value="7">⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)</option>
+                      <option value="6">⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)</option>
+                      <option value="5">⭐️⭐️⭐️⭐️⭐️ (5/10)</option>
+                      <option value="4">⭐️⭐️⭐️⭐️ (4/10)</option>
+                      <option value="3">⭐️⭐️⭐️ (3/10)</option>
+                      <option value="2">⭐️⭐️ (2/10)</option>
+                      <option value="1">⭐️ (1/10)</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <textarea id="userCommentInput" class="form-control bg-dark text-light border-secondary small" rows="2" placeholder="اكتب رأيك هنا..."></textarea>
+                  </div>
+                  <button id="submitReviewBtn" class="btn btn-sm btn-info fw-bold">نشر التقييم</button>
+                </div>
+              </div>
+
+              <!-- عرض قائمة التعليقات -->
+              <h6 class="fw-bold text-info mb-3"><i class="fa-solid fa-comments me-1"></i> آراء المتابعين</h6>
+              <div id="commentsList" class="d-flex flex-column gap-2">
+                <div class="text-secondary small">جاري تحميل التعليقات...</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -157,7 +225,6 @@
 
     const userProfile = document.getElementById('user-profile');
 
-    // استماع الأحداث للتسجيل والخروج باستخدام Event Delegation
     if (userProfile) {
       userProfile.addEventListener('click', (e) => {
         if (e.target.closest('#login-btn')) {
