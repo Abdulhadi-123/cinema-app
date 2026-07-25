@@ -172,14 +172,15 @@ async function renderProfileWatchedCards() {
   container.innerHTML = '';
   for (const id of allIds) {
     try {
-      let mediaType = 'movie';
-      let res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${currentLang}`);
+      let mediaType = 'tv'; // نبحث كمسلسل أولاً لتجنب خلطه بالأفلام التي تحمل نفس الـ ID
+      let res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${currentLang}`);
       let data = await res.json();
 
+      // إذا لم يكن مسلسلاً صحيحاً، نبحث عنه كفيلم
       if (!data.id || data.success === false) {
-        res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${currentLang}`);
+        res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${currentLang}`);
         data = await res.json();
-        mediaType = 'tv';
+        mediaType = 'movie';
       }
 
       if (data.id) {
