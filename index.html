@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cinema App</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
 
   <!-- Bootstrap RTL CSS -->
@@ -12,7 +12,7 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css?v=2.1">
 </head>
 <body class="bg-dark text-white">
 
@@ -71,11 +71,11 @@
   <div class="container my-4">
     <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
     <div class="row" id="movies-grid">
-      <!-- Dynamic Content Loaded via JavaScript -->
+      <!-- Dynamic Content -->
     </div>
   </div>
 
-  <!-- Detail Modal View (الأفلام، المسلسلات، الحلقات، والتقييمات) -->
+  <!-- Detail Modal View -->
   <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content bg-dark text-white border-secondary">
@@ -86,20 +86,17 @@
         </div>
 
         <div class="modal-body">
-          <!-- Navigation Tabs (ضروري جداً للتنقل بين القصة، الحلقات، والتقييمات) -->
           <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active text-light" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab">
                 <i class="fa-solid fa-circle-info me-1"></i> القصة والتفاصيل
               </button>
             </li>
-            <!-- تبويب الحلقات الخاص بالمسلسلات -->
             <li class="nav-item d-none" id="episodes-tab-li" role="presentation">
               <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane" type="button" role="tab">
                 <i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم
               </button>
             </li>
-            <!-- تبويب التقييم والتعليقات الكلية -->
             <li class="nav-item" role="presentation">
               <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab">
                 <i class="fa-solid fa-comments me-1"></i> التقييمات والمراجعات
@@ -107,7 +104,6 @@
             </li>
           </ul>
 
-          <!-- Tabs Content Panes -->
           <div class="tab-content" id="detailTabsContent">
             
             <!-- 1. Tab: القصة، الإعلان، والطاقم -->
@@ -119,31 +115,24 @@
               </div>
 
               <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل الأساسي:</h6>
-              <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2">
-                <!-- Cast members generated via app.js -->
-              </div>
+              <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
             <!-- 2. Tab: الحلقات والمواسم -->
             <div class="tab-pane fade" id="episodes-tab-pane" role="tabpanel">
               <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-3 rounded border border-secondary">
                 <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
-                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto">
-                  <!-- Seasons Options loaded dynamically -->
-                </select>
+                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
 
-              <!-- الحاوية التي يتم فيها توليد بطاقات الحلقات -->
-              <div id="episodesContainer" class="row g-3" style="max-height: 420px; overflow-y: auto;">
-                <!-- Episodes populated here -->
-              </div>
+              <div id="episodesContainer" class="row g-3" style="max-height: 420px; overflow-y: auto;"></div>
             </div>
 
-            <!-- 3. Tab: تقييم العمل ككل والتعليقات -->
+            <!-- 3. Tab: تقييمات الفيلم فقط -->
             <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel">
-              <!-- قسم إضافة تقييم جديد للعمل كاملاً -->
-              <div class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
-                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك في العمل:</h6>
+              <!-- أضيف هذا القسم وتقييمه للأفلام فقط -->
+              <div id="movie-rating-section" class="card bg-secondary bg-opacity-10 border-secondary p-3 mb-3">
+                <h6 class="fw-bold text-info mb-2">أضف تقييمك ورأيك للفيلم:</h6>
                 
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <label for="userRatingInput" class="small text-secondary me-1">التقييم:</label>
@@ -161,7 +150,7 @@
                   </select>
                 </div>
 
-                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="3" placeholder="اكتب رأيك أو تعليقك حول هذا العمل هنا..."></textarea>
+                <textarea id="userCommentInput" class="form-control bg-dark text-white border-secondary mb-2" rows="3" placeholder="اكتب رأيك أو تعليقك حول هذا الفيلم..."></textarea>
                 <div>
                   <button id="submitReviewBtn" class="btn btn-sm btn-info text-dark fw-bold px-3">
                     <i class="fa-solid fa-paper-plane me-1"></i> نشر التقييم
@@ -169,11 +158,8 @@
                 </div>
               </div>
 
-              <!-- قسم عرض مراجعات المتابعين -->
               <h6 class="fw-bold text-light mb-2"><i class="fa-solid fa-comments me-1"></i> آراء ومراجعات المتابعين:</h6>
-              <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
-                <!-- User reviews inserted dynamically -->
-              </div>
+              <div id="commentsList" class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
 
           </div>
@@ -183,23 +169,18 @@
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./firebase-config.js"></script>
+  <script src="./app.js?v=2.1"></script>
 
-  <!-- Firebase Configurations and Application JS -->
-  <script type="module" src="firebase-config.js"></script>
-  <script src="app.js"></script>
-
-  <!-- Service Worker Registration -->
   <script>
-  // إلغاء الـ Service Worker مؤقتاً للتخلص من مشكلة الكاش القديم أثناء التطوير
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister();
-      }
-    });
-  }
-</script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+  </script>
 </body>
 </html>
