@@ -120,6 +120,7 @@ function updateUIWithUserData() {
   if (nameSpan) nameSpan.textContent = userProfileData.displayName;
   if (handleSpan) handleSpan.textContent = `@${userProfileData.username}`;
 
+  // بيانات صفحة البروفايل المستقلة
   const pAvatar = document.getElementById('profile-page-avatar');
   const pName = document.getElementById('profile-page-name');
   const pUser = document.getElementById('profile-page-username');
@@ -129,6 +130,11 @@ function updateUIWithUserData() {
   if (pName) pName.textContent = userProfileData.displayName;
   if (pUser) pUser.textContent = `@${userProfileData.username}`;
   if (pJoined) pJoined.textContent = `انضم في: ${userProfileData.joinedAt || '2026'}`;
+
+  const statFavCount = document.getElementById('stat-fav-count');
+  const statEpCount = document.getElementById('stat-ep-count');
+  if (statFavCount) statFavCount.textContent = (userProfileData.favorites || favorites).length;
+  if (statEpCount) statEpCount.textContent = (userProfileData.watchedEpisodes || watchedEpisodes).length;
 
   const editUser = document.getElementById('edit-username');
   const editDisplay = document.getElementById('edit-displayname');
@@ -144,18 +150,17 @@ window.openProfilePage = function() {
   renderProfileWatchedCards();
 };
 
-// عرض الكاردز الصغيرة المجمعة في البروفايل (العين + الحلقات + تمت المشاهدة بدون تكرار)
+// عرض الكاردز الصغيرة المجمعة في البروفايل
 async function renderProfileWatchedCards() {
   const container = document.getElementById('profile-watched-grid');
   if (!container) return;
   container.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
 
+  // تجميع كل IDs المسلسلات والأفلام التي شاهدها أو تابع حلقات لها دون تكرار
   const uniqueIdsSet = new Set([...watchedList]);
-  
-  // دمج المسلسلات التي تم متابعة حلقات لها أو وضع علامة العين عليها
   watchedEpisodes.forEach(epKey => {
     const tvId = epKey.split('_')[0];
-    if (tvId) uniqueIdsSet.add(Number(tvId) || tvId);
+    if (tvId) uniqueIdsSet.add(tvId);
   });
 
   const allIds = Array.from(uniqueIdsSet);
@@ -167,6 +172,7 @@ async function renderProfileWatchedCards() {
   container.innerHTML = '';
   for (const id of allIds) {
     try {
+      // محاولة تحديد ما إذا كان مسلسل أو فيلم من خلال استعلام سريعي API
       let res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${currentLang}`);
       let data = await res.json();
       let mediaType = 'movie';
@@ -180,7 +186,9 @@ async function renderProfileWatchedCards() {
       if (data.id) {
         const title = data.title || data.name;
         const poster = data.poster_path ? `${IMAGE_BASE_URL}${data.poster_path}` : 'https://placehold.co/300x450/1e293b/ffffff?text=No+Image';
-        const isWatchedMovie = watchedList.includes(Number(id)) || watchedList.includes(id);
+        const isWatchedMovie = watchedList.includes(Number(id));
+        
+        // التحقق من تكرار مشاهدة الحلقات للمسلسلات
         const episodesCountForThisTv = watchedEpisodes.filter(e => e.startsWith(id + '_')).length;
 
         const card = document.createElement('div');
@@ -189,7 +197,7 @@ async function renderProfileWatchedCards() {
           <div class="card bg-dark border-secondary h-100 p-2 position-relative shadow-sm" style="font-size: 12px; cursor: pointer;">
             <div class="position-relative">
               <img src="${poster}" class="rounded w-100" style="height: 160px; object-fit: cover;">
-              ${isWatchedMovie ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" title="تمت المشاهدة (عين)"><i class="fa-solid fa-eye"></i></span>' : ''}
+              ${isWatchedMovie ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" title="تمت المشاهدة"><i class="fa-solid fa-eye"></i></span>' : ''}
               ${episodesCountForThisTv > 0 ? `<span class="badge bg-info text-dark position-absolute top-0 end-0 m-1" title="حلقات متابعة"><i class="fa-solid fa-check"></i> ${episodesCountForThisTv}</span>` : ''}
             </div>
             <div class="mt-2 text-center">
@@ -207,6 +215,7 @@ async function renderProfileWatchedCards() {
   }
 }
 
+// تحويل الصورة وضغطها
 function convertFileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -364,7 +373,7 @@ function displayItems(items) {
     const poster = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/500x750/1e293b/ffffff?text=No+Image';
 
     const card = document.createElement('div');
-    card.className = 'col-6 col-sm-4 col-md-3 col-lg-2 mb-3';
+    card.className = 'col-6 col-sm-4 col-md-3 col-lg-2 mb-3'; // كاردز أصغر وأجمل
     card.innerHTML = `
       <div class="movie-card h-100 d-flex flex-column">
         <div class="position-relative">
@@ -589,6 +598,7 @@ function displayFavorites() {
 function loadCategory(category) {
   currentCategory = category;
   
+  // إظهار المحتوى الرئيسي وإخفاء صفحة البروفايل
   document.getElementById('main-content-area').classList.remove('d-none');
   document.getElementById('profile-page-area').classList.add('d-none');
 
