@@ -135,6 +135,13 @@ function updateUIWithUserData() {
   if (profUser) profUser.textContent = `@${userProfileData.username}`;
   if (profJoined) profJoined.textContent = `انضم في: ${userProfileData.joinedAt || '2026'}`;
 
+  // تحديث العدادات والإحصائيات داخل البروفايل
+  const statFavCount = document.getElementById('stat-fav-count');
+  const statEpCount = document.getElementById('stat-ep-count');
+
+  if (statFavCount) statFavCount.textContent = (userProfileData.favorites || favorites).length;
+  if (statEpCount) statEpCount.textContent = (userProfileData.watchedEpisodes || watchedEpisodes).length;
+
   const editUser = document.getElementById('edit-username');
   const editDisplay = document.getElementById('edit-displayname');
 

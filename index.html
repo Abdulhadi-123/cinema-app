@@ -154,8 +154,27 @@
             <div id="profile-error" class="text-danger small mb-2 d-none"></div>
             <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
 
-            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold">حفظ التغييرات</button>
+            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
           </form>
+
+          <!-- قسم إحصائيات المشاهدة والحلقات -->
+          <div class="border-top border-secondary pt-3 mt-3">
+            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> إحصائيات المشاهدة الخاصة بك:</h6>
+            <div class="row text-center g-2">
+              <div class="col-6">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">الأفلام/العناصر المفضلة</div>
+                  <div id="stat-fav-count" class="fw-bold text-white fs-5">0</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">الحلقات المشاهدة</div>
+                  <div id="stat-ep-count" class="fw-bold text-white fs-5">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
