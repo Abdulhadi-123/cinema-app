@@ -192,13 +192,14 @@
 
   <!-- Service Worker Registration -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker Registered Successfully'))
-          .catch(err => console.log('Service Worker Registration Error:', err));
-      });
-    }
-  </script>
+  // إلغاء الـ Service Worker مؤقتاً للتخلص من مشكلة الكاش القديم أثناء التطوير
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+</script>
 </body>
 </html>
