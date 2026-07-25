@@ -36,10 +36,27 @@ const translations = {
 // ==========================================
 // 1️⃣ حفظ البيانات محلياً
 // ==========================================
-function saveData() {
+async function saveData() {
+  // 1. حفظ نسخة محلية دائماً كاحتياط
   localStorage.setItem('cinema_favs', JSON.stringify(favorites));
   localStorage.setItem('cinema_watched', JSON.stringify(watchedList));
   localStorage.setItem('cinema_watched_episodes', JSON.stringify(watchedEpisodes));
+
+  // 2. إذا كان المستخدم مسجل دخول، ارفع البيانات لـ Firestore
+  if (window.currentUser && window.db) {
+    try {
+      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+      await window.setDoc(userDocRef, {
+        favorites: favorites,
+        watchedList: watchedList,
+        watchedEpisodes: watchedEpisodes,
+        lastUpdated: new Date()
+      }, { merge: true });
+      console.log("☁️ تم حفظ البيانات في قاعدة البيانات بنجاح!");
+    } catch (error) {
+      console.error("خطأ أثناء الحفظ في Firestore:", error);
+    }
+  }
 }
 
 // ==========================================
@@ -374,3 +391,29 @@ document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', 
 });
 
 loadCategory('trending');
+
+// ==========================================
+// جلب بيانات المستخدم من Firestore عند تسجيل الدخول
+// ==========================================
+window.syncUserDataFromCloud = async function() {
+  if (window.currentUser && window.db) {
+    try {
+      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+      const docSnap = await window.getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        favorites = data.favorites || [];
+        watchedList = data.watchedList || [];
+        watchedEpisodes = data.watchedEpisodes || [];
+        
+        // تحديث الحفظ المحلي وتحديث الشاشة
+        saveData();
+        if (currentCategory === 'favorites') displayFavorites();
+        console.log("📥 تم استرجاع بياناتك من قاعدة البيانات!");
+      }
+    } catch (error) {
+      console.error("خطأ أثناء جلب البيانات من Firestore:", error);
+    }
+  }
+};
