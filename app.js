@@ -4,7 +4,6 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 let currentLang = 'ar-SA';
 let currentCategory = 'trending';
-let currentMediaItem = null;
 
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
@@ -34,15 +33,13 @@ const translations = {
 };
 
 // ==========================================
-// 1️⃣ حفظ البيانات محلياً
+// 1️⃣ حفظ البيانات محلياً + السحابياً
 // ==========================================
 async function saveData() {
-  // 1. حفظ نسخة محلية دائماً كاحتياط
   localStorage.setItem('cinema_favs', JSON.stringify(favorites));
   localStorage.setItem('cinema_watched', JSON.stringify(watchedList));
   localStorage.setItem('cinema_watched_episodes', JSON.stringify(watchedEpisodes));
 
-  // 2. إذا كان المستخدم مسجل دخول، ارفع البيانات لـ Firestore
   if (window.currentUser && window.db) {
     try {
       const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
@@ -52,12 +49,30 @@ async function saveData() {
         watchedEpisodes: watchedEpisodes,
         lastUpdated: new Date()
       }, { merge: true });
-      console.log("☁️ تم حفظ البيانات في قاعدة البيانات بنجاح!");
     } catch (error) {
-      console.error("خطأ أثناء الحفظ في Firestore:", error);
+      console.error("خطأ بالحفظ السحابي:", error);
     }
   }
 }
+
+window.syncUserDataFromCloud = async function() {
+  if (window.currentUser && window.db) {
+    try {
+      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
+      const docSnap = await window.getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        favorites = data.favorites || [];
+        watchedList = data.watchedList || [];
+        watchedEpisodes = data.watchedEpisodes || [];
+        saveData();
+        if (currentCategory === 'favorites') displayFavorites();
+      }
+    } catch (error) {
+      console.error("خطأ بجلب البيانات السحابية:", error);
+    }
+  }
+};
 
 // ==========================================
 // 2️⃣ جلب وعرض المحتوى
@@ -97,13 +112,13 @@ function displayItems(items) {
     card.innerHTML = `
       <div class="movie-card h-100 d-flex flex-column">
         <div class="position-relative">
-          <img src="${poster}" alt="${title}" class="movie-poster" loading="lazy" onerror="this.src='https://placehold.co/500x750/1e293b/ffffff?text=No+Image'">
+          <img src="${poster}" alt="${title}" class="movie-poster" loading="lazy">
           
           <button class="fav-btn ${isFav ? 'active' : ''}">
             <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
           </button>
 
-          <button class="watched-card-btn ${isWatched ? 'active' : ''}" title="${isWatched ? 'تمت المشاهدة' : 'تعليم كمشاهد'}">
+          <button class="watched-card-btn ${isWatched ? 'active' : ''}">
             <i class="fa-solid fa-eye"></i>
           </button>
 
@@ -149,11 +164,9 @@ function toggleWatchedMovie(itemId, btn) {
 }
 
 // ==========================================
-// 3️⃣ تفاصيل المودال والحلقات
+// 3️⃣ تفاصيل المودال، الترايلر والحلقات
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
-  currentMediaItem = { id: itemId, mediaType };
-  
   const modalElement = document.getElementById('movieDetailModal');
   const modal = new bootstrap.Modal(modalElement);
   
@@ -164,12 +177,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   document.getElementById('castContainer').innerHTML = '';
 
   const epTab = document.getElementById('episodes-tab-li');
-  const movieRatingSec = document.getElementById('movie-rating-section');
 
   new bootstrap.Tab(document.getElementById('info-tab')).show();
   modal.show();
 
   try {
+    // 1. جلب بيانات الفيلم/المسلسل
     const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${currentLang}`);
     const data = await res.json();
 
@@ -177,27 +190,27 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     document.getElementById('modalOverview').textContent = data.overview || 'لا يوجد ملخص متوفر.';
 
     if (mediaType === 'movie') {
-      epTab.classList.add('d-none');
-      movieRatingSec.classList.remove('d-none');
+      if (epTab) epTab.classList.add('d-none');
     } else {
-      epTab.classList.remove('d-none');
-      movieRatingSec.classList.add('d-none');
+      if (epTab) epTab.classList.remove('d-none');
       setupSeasons(data.seasons || [], itemId);
     }
 
+    // 2. جلب الفيديو الإعلاني (Trailer)
     const vRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=en-US`);
     const vData = await vRes.json();
-    const trailer = (vData.results || []).find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+    const trailer = (vData.results || []).find(v => v.site === 'YouTube' && (v.type.toLowerCase() === 'trailer' || v.type.toLowerCase() === 'teaser'));
     
     if (trailer) {
       document.getElementById('trailerIframe').src = `https://www.youtube.com/embed/${trailer.key}`;
       document.getElementById('trailerContainer').classList.remove('d-none');
     }
 
+    // 3. جلب طاقم التمثيل
     const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
     const cData = await cRes.json();
     const castContainer = document.getElementById('castContainer');
-    (cData.cast || []).slice(0, 6).forEach(actor => {
+    (cData.cast || []).slice(0, 8).forEach(actor => {
       const img = actor.profile_path ? `${IMAGE_BASE_URL}${actor.profile_path}` : 'https://placehold.co/100x100/1e293b/ffffff?text=User';
       castContainer.innerHTML += `
         <div class="actor-card text-center">
@@ -208,12 +221,13 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
     });
 
   } catch (e) {
-    console.error(e);
+    console.error("خطأ في جلب التفاصيل:", e);
   }
 }
 
 function setupSeasons(seasons, tvId) {
   const select = document.getElementById('seasonSelect');
+  if (!select) return;
   select.innerHTML = '';
   const validSeasons = seasons.filter(s => s.season_number > 0);
   
@@ -227,6 +241,7 @@ function setupSeasons(seasons, tvId) {
 
 async function fetchEpisodes(tvId, seasonNum) {
   const container = document.getElementById('episodesContainer');
+  if (!container) return;
   container.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
 
   try {
@@ -254,17 +269,6 @@ async function fetchEpisodes(tvId, seasonNum) {
               <span class="badge bg-info text-dark">حلقة ${ep.episode_number}</span>
               <h6 class="card-title text-white fw-bold my-1 small text-truncate">${ep.name}</h6>
             </div>
-            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary">
-              <small class="text-muted" style="font-size: 10px;">تقييم الحلقة:</small>
-              <div class="d-flex gap-1">
-                <select id="ep-rate-${ep.id}" class="form-select form-select-sm bg-dark text-warning border-secondary p-0 px-1" style="font-size: 11px;">
-                  <option value="10">⭐ 10</option><option value="9">⭐ 9</option>
-                  <option value="8" selected>⭐ 8</option><option value="7">⭐ 7</option>
-                  <option value="6">⭐ 6</option><option value="5">⭐ 5</option>
-                </select>
-                <button class="btn btn-xs btn-outline-info p-1 py-0 btn-ep-rate" style="font-size: 10px;">حفظ</button>
-              </div>
-            </div>
           </div>
         </div>
       `;
@@ -276,7 +280,7 @@ async function fetchEpisodes(tvId, seasonNum) {
       container.appendChild(epCol);
     });
   } catch (e) {
-    console.error(e);
+    console.error("خطأ في جلب الحلقات:", e);
   }
 }
 
@@ -295,7 +299,7 @@ function toggleWatchedEp(epKey, btn) {
 }
 
 // ==========================================
-// 4️⃣ المفضلة والتنقل
+// 4️⃣ المفضلة والتنقل والبحث
 // ==========================================
 function toggleFavorite(item, btn) {
   const idx = favorites.findIndex(f => f.id === item.id);
@@ -376,7 +380,7 @@ searchForm.addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// 5️⃣ تنظيف خلفية الـ Modal المظلمة تلقائياً
+// 5️⃣ تنظيف خلفية الـ Modal
 // ==========================================
 function clearModalBackdrop() {
   document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
@@ -391,29 +395,3 @@ document.getElementById('movieDetailModal').addEventListener('hidden.bs.modal', 
 });
 
 loadCategory('trending');
-
-// ==========================================
-// جلب بيانات المستخدم من Firestore عند تسجيل الدخول
-// ==========================================
-window.syncUserDataFromCloud = async function() {
-  if (window.currentUser && window.db) {
-    try {
-      const userDocRef = window.doc(window.db, "users", window.currentUser.uid);
-      const docSnap = await window.getDoc(userDocRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        favorites = data.favorites || [];
-        watchedList = data.watchedList || [];
-        watchedEpisodes = data.watchedEpisodes || [];
-        
-        // تحديث الحفظ المحلي وتحديث الشاشة
-        saveData();
-        if (currentCategory === 'favorites') displayFavorites();
-        console.log("📥 تم استرجاع بياناتك من قاعدة البيانات!");
-      }
-    } catch (error) {
-      console.error("خطأ أثناء جلب البيانات من Firestore:", error);
-    }
-  }
-};
