@@ -1,345 +1,315 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" id="html-tag">
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سينما - منصة الأفلام والمسلسلات</title>
+  <title>Cinema App - سينما</title>
 
-  <!-- Bootstrap 5 RTL CSS -->
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3172/3172522.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- Bootstrap RTL + FontAwesome -->
   <link id="bootstrap-link" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
-  
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    body { 
-      background-color: #0f172a; 
-      color: #f8fafc; 
-      font-family: system-ui, -apple-system, sans-serif; 
-    }
-    .movie-card { 
-      background-color: #1e293b; 
-      border-radius: 8px; 
-      overflow: hidden; 
-      transition: transform 0.2s; 
-      border: 1px solid #334155; 
-    }
-    .movie-card:hover { 
-      transform: translateY(-5px); 
-    }
-    .movie-poster { 
-      width: 100%; 
-      height: 250px; 
-      object-fit: cover; 
-    }
-    .fav-btn, .watched-card-btn { 
-      position: absolute; 
-      top: 8px; 
-      z-index: 2; 
-      background: rgba(0,0,0,0.6); 
-      border: none; 
-      border-radius: 50%; 
-      width: 32px; 
-      height: 32px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      color: #fff; 
-      cursor: pointer; 
-      transition: background 0.2s; 
-    }
-    .fav-btn { 
-      right: 8px; 
-    }
-    .fav-btn.active { 
-      color: #ef4444; 
-    }
-    .watched-card-btn { 
-      right: 48px; 
-    }
-    .watched-card-btn.active { 
-      color: #22c55e; 
-    }
-    .rating-badge { 
-      position: absolute; 
-      bottom: 8px; 
-      left: 8px; 
-      background: rgba(0,0,0,0.7); 
-      padding: 2px 6px; 
-      border-radius: 4px; 
-      font-size: 11px; 
-      color: #fbbf24; 
-    }
-    .actor-img { 
-      width: 70px; 
-      height: 70px; 
-      border-radius: 50%; 
-      object-fit: cover; 
-    }
-  </style>
-
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body>
+<body class="bg-dark text-white">
 
-  <!-- شريط التنقل العلوي -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top py-2">
-    <div class="container-fluid">
-      
-      <a class="navbar-brand fw-bold text-info" href="#" onclick="loadCategory('trending')">
-        <i class="fa-solid fa-film me-1"></i> <span id="logo-text">سينما</span>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-info d-flex align-items-center gap-2" href="#" onclick="loadCategory('trending')">
+        <i class="fa-solid fa-film text-info fs-4"></i>
+        <span id="logo-text">سينما</span>
       </a>
       
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-
-      <div class="collapse navbar-collapse" id="navbarContent">
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" id="nav-home" href="#" onclick="loadCategory('trending')">الرئيسية</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="nav-movies" href="#" onclick="loadCategory('movies')">الأفلام</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="nav-series" href="#" onclick="loadCategory('series')">المسلسلات</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="nav-favs" href="#" onclick="loadCategory('favorites')">
-              <span id="nav-fav-text">المفضلة</span> ❤️
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link active" href="#" id="nav-home" onclick="loadCategory('trending')">الرئيسية</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')"><span id="nav-fav-text">المفضلة</span> ❤️</a></li>
         </ul>
 
-        <!-- نموذج البحث -->
-        <form class="d-flex me-3" id="search-form">
-          <div class="input-group">
-            <input class="form-control form-control-sm bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أو مستخدم (@username)...">
-            <button class="btn btn-outline-info btn-sm" type="submit" id="btn-search">بحث</button>
-          </div>
-        </form>
-
-        <!-- أزرار الحساب وتغيير اللغة -->
-        <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
-          <button class="btn btn-sm btn-outline-secondary text-white" id="lang-btn" onclick="toggleLanguage()">English</button>
+        <!-- auth container -->
+        <div id="auth-container" class="d-flex align-items-center gap-2 my-2 my-lg-0 me-3">
+          <button id="login-btn" class="btn btn-outline-info btn-sm">
+            <i class="fa-brands fa-google me-1"></i> تسجيل الدخول
+          </button>
           
-          <div id="auth-container">
-            <button class="btn btn-sm btn-info fw-bold" id="login-btn" onclick="loginWithGoogle()">تسجيل الدخول</button>
-            <div id="user-info" class="d-none align-items-center gap-2" style="cursor: pointer;" onclick="openMyProfile()">
-              <img id="user-avatar" src="" class="rounded-circle border border-info" style="width: 35px; height: 35px; object-fit: cover;">
-              <div class="d-none d-md-block text-start" style="line-height: 1.1;">
-                <div id="user-name" class="fw-bold text-white small"></div>
-                <div id="user-handle" class="text-info" style="font-size: 10px;"></div>
+          <div id="user-info" class="d-none d-flex align-items-center gap-2">
+            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;" onclick="openMyProfile()">
+              <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+              <div class="d-flex flex-column">
+                <span id="user-name" class="small text-white fw-bold leading-none"></span>
+                <span id="user-handle" class="text-info" style="font-size: 10px;"></span>
               </div>
             </div>
+            <button id="logout-btn" class="btn btn-outline-danger btn-sm p-1 px-2" title="تسجيل الخروج">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
           </div>
         </div>
 
+        <form class="d-flex" id="search-form">
+          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أو @username...">
+          <button class="btn btn-outline-info" type="submit" id="btn-search">بحث</button>
+        </form>
+
+        <button class="btn btn-sm btn-secondary ms-2 mt-2 mt-lg-0" id="lang-btn" onclick="toggleLanguage()">English</button>
       </div>
     </div>
   </nav>
 
-  <!-- المحتوى الرئيسي (عرض الأفلام والمسلسلات) -->
+  <!-- Container المحتوى الرئيسي -->
   <div class="container my-4" id="main-content-area">
-    <h3 id="section-title" class="fw-bold mb-4 text-white">المقترحات والأشياء الشائعة 🔥</h3>
-    <div class="row" id="movies-grid">
-      <!-- يتم حقن الكاردز هنا برمجياً -->
-    </div>
+    <h3 class="fw-bold mb-4 border-end border-4 border-info pe-2" id="section-title">المقترحات والأشياء الشائعة 🔥</h3>
+    <div class="row g-3" id="movies-grid"></div>
   </div>
 
   <!-- صفحة البروفايل المستقلة -->
   <div class="container my-4 d-none" id="profile-page-area">
-    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="loadCategory(currentCategory)">
+    <button class="btn btn-outline-secondary btn-sm mb-3" onclick="loadCategory('trending')">
       <i class="fa-solid fa-arrow-right me-1"></i> العودة للرئيسية
     </button>
     
     <div class="row">
-      <!-- بطاقة معلومات البروفايل والإحصائيات -->
-      <div class="col-lg-4 mb-4">
-        <div class="card bg-dark border-secondary p-4 text-center shadow">
-          
-          <img id="profile-page-avatar" src="https://cdn-icons-png.flaticon.com/512/3172/3172522.png" class="rounded-circle mx-auto mb-3 border border-info" style="width: 100px; height: 100px; object-fit: cover;">
-          
-          <h4 id="profile-page-name" class="fw-bold text-white mb-0">اسم المستخدم</h4>
-          <small id="profile-page-username" class="text-info mb-2">@username</small>
-          <p id="profile-page-joined" class="text-secondary small mb-3">انضم في: 2026</p>
+      <!-- معلومات البروفايل والتعديل أو المتابعة -->
+      <div class="col-md-4 mb-4">
+        <div class="p-4 bg-secondary bg-opacity-10 border border-secondary rounded">
+          <div class="text-center mb-3">
+            <img id="profile-page-avatar" src="" class="rounded-circle border border-2 border-info mb-2" style="width: 90px; height: 90px; object-fit: cover;">
+            <h5 id="profile-page-name" class="fw-bold mb-0"></h5>
+            <span id="profile-page-username" class="text-info small"></span>
+            <div id="profile-page-joined" class="text-secondary small mt-1"></div>
+          </div>
 
-          <!-- زر المتابعة/إلغاء المتابعة -->
+          <!-- زر المتابعة (يظهر عند زيارة بروفايل شخص آخر) -->
           <div id="follow-btn-container" class="d-none"></div>
 
-          <!-- نموذج تعديل البروفايل -->
-          <div id="edit-profile-section" class="d-none text-start border-top border-secondary pt-3 mt-2">
-            <h6 class="text-info fw-bold mb-2 small">تعديل الملف الشخصي</h6>
+          <!-- نموذج تعديل البروفايل (يظهر فقط لبروفايلك الشخصي) -->
+          <div id="edit-profile-section">
             <form id="profile-form">
-              <div class="mb-2">
-                <label class="form-label text-secondary" style="font-size: 11px;">اسم المستخدم (Username)</label>
-                <input type="text" id="edit-username" class="form-control form-control-sm bg-dark text-white border-secondary">
-              </div>
-              <div class="mb-2">
-                <label class="form-label text-secondary" style="font-size: 11px;">الاسم المستعار</label>
-                <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary">
-              </div>
               <div class="mb-3">
-                <label class="form-label text-secondary" style="font-size: 11px;">تغيير الصورة الشخصية</label>
-                <input type="file" id="edit-avatar-file" class="form-control form-control-sm bg-dark text-white border-secondary" accept="image/*">
+                <label class="form-label small text-secondary">اسم المستخدم (Username)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                  <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$">
+                </div>
               </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-secondary">الاسم المستعار</label>
+                <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-secondary">تغيير الصورة الشخصية</label>
+                <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
+              </div>
+
               <div id="profile-error" class="text-danger small mb-2 d-none"></div>
-              <div id="profile-success" class="text-success small mb-2 d-none">تم الحفظ بنجاح!</div>
-              <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold">حفظ التغييرات</button>
+              <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
+
+              <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
             </form>
           </div>
 
-          <!-- قسم الإحصائيات -->
           <div class="border-top border-secondary pt-3 mt-3">
-            <h6 class="text-start text-info mb-2" style="font-size: 13px;"><i class="fa-solid fa-chart-pie me-1"></i> الإحصائيات:</h6>
-            <div class="row g-2">
-              
+            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> الإحصائيات:</h6>
+            <div class="row text-center g-2">
               <div class="col-6 mb-2">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">المفضلة ❤️</div>
-                  <div class="fw-bold text-white fs-5">0</div>
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">المفضلة</div>
+                  <div id="stat-fav-count" class="fw-bold text-white fs-5">0</div>
                 </div>
               </div>
-
               <div class="col-6 mb-2">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">أفلام مشاهدة 🎬</div>
-                  <div class="fw-bold text-white fs-5">0</div>
+                <div class="p-2 bg-secondary bg-opacity-25 rounded">
+                  <div class="text-secondary" style="font-size: 11px;">الحلقات</div>
+                  <div id="stat-ep-count" class="fw-bold text-white fs-5">0</div>
                 </div>
               </div>
-
-              <div class="col-6 mb-2">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">المتابِعون 👤</div>
-                  <div class="fw-bold text-info fs-5">0</div>
+              <div class="col-6" style="cursor: pointer;" onclick="openFollowersModal('followers')">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded hover-bg-secondary">
+                  <div class="text-secondary" style="font-size: 11px;">المتابِعون 👥</div>
+                  <div id="stat-followers-count" class="fw-bold text-info fs-5">0</div>
                 </div>
               </div>
-
-              <div class="col-6 mb-2">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">المتابَعون 👥</div>
-                  <div class="fw-bold text-info fs-5">0</div>
+              <div class="col-6" style="cursor: pointer;" onclick="openFollowersModal('following')">
+                <div class="p-2 bg-secondary bg-opacity-25 rounded hover-bg-secondary">
+                  <div class="text-secondary" style="font-size: 11px;">المتابَعون ➕</div>
+                  <div id="stat-following-count" class="fw-bold text-info fs-5">0</div>
                 </div>
               </div>
-
-              <div class="col-6">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">حلقات متابعة 📺</div>
-                  <div class="fw-bold text-white fs-5">0</div>
-                </div>
-              </div>
-
-              <div class="col-6">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-                  <div class="text-secondary" style="font-size: 11px;">ساعات المشاهدة ⏱️</div>
-                  <div class="fw-bold text-info fs-5">0 س</div>
-                </div>
-              </div>
-
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- الأعمال التي تمت مشاهدتها في البروفايل -->
-      <div class="col-lg-8">
-        <div class="card bg-dark border-secondary p-3 shadow">
-          <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-eye me-2 text-info"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h5>
-          <div class="row" id="profile-watched-grid">
-            <!-- يتم تعبئتها تلقائياً -->
-          </div>
-        </div>
+      <!-- عرض قوائم المشاهدة الخاصة بالمستخدم المستعرض -->
+      <div class="col-md-8">
+        <h4 class="fw-bold mb-3 text-info"><i class="fa-solid fa-eye me-2"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h4>
+        <div class="row g-2" id="profile-watched-grid"></div>
       </div>
-
     </div>
   </div>
 
-  <!-- Modal تفاصيل الفيلم/المسلسل والحلقات -->
-  <div class="modal fade" id="movieDetailModal" tabindex="-1">
+  <!-- Modal تفاصيل العمل -->
+  <div class="modal fade" id="movieDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content bg-dark text-white border-secondary">
-        
         <div class="modal-header border-secondary">
-          <h5 class="modal-title fw-bold" id="modalTitle">Loading...</h5>
+          <h5 class="modal-title fw-bold text-info" id="modalTitle">عنوان العمل</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
-          <ul class="nav nav-tabs border-secondary mb-3" id="detailTab" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active text-info" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button">التفاصيل</button>
+          <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active text-light" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane"><i class="fa-solid fa-circle-info me-1"></i> التفاصيل</button>
             </li>
-            <li class="nav-item d-none" id="episodes-tab-li" role="presentation">
-              <button class="nav-link text-info" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-pane" type="button">الحلقات والمواسم</button>
+            <li class="nav-item d-none" id="episodes-tab-li">
+              <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane"><i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم</button>
             </li>
           </ul>
 
-          <div class="tab-content" id="detailTabContent">
-            
-            <!-- تاب التفاصيل -->
-            <div class="tab-pane fade show active" id="info-pane">
-              <p id="modalOverview" class="text-secondary small"></p>
-              
-              <div id="trailerContainer" class="mb-3 d-none">
-                <h6 class="fw-bold text-white mb-2">الإعلان التشويقي</h6>
-                <div class="ratio ratio-16x9">
-                  <iframe id="trailerIframe" src="" allowfullscreen></iframe>
-                </div>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="info-tab-pane">
+              <p id="modalOverview" class="text-secondary leading-relaxed"></p>
+              <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
+                <iframe id="trailerIframe" src="" allowfullscreen></iframe>
               </div>
-
-              <h6 class="fw-bold text-white mb-2">طاقم العمل</h6>
-              <div class="d-flex gap-3 overflow-auto pb-2" id="castContainer"></div>
+              <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل:</h6>
+              <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
             </div>
 
-            <!-- تاب الحلقات -->
-            <div class="tab-pane fade" id="episodes-pane">
-              <div class="mb-3">
-                <select id="seasonSelect" class="form-select bg-dark text-white border-secondary form-select-sm"></select>
+            <div class="tab-pane fade" id="episodes-tab-pane">
+              <div class="d-flex align-items-center justify-content-between mb-3 bg-secondary bg-opacity-25 p-2 rounded">
+                <label for="seasonSelect" class="form-label mb-0 fw-bold small text-info">اختر الموسم:</label>
+                <select id="seasonSelect" class="form-select form-select-sm bg-dark text-white border-secondary w-auto"></select>
               </div>
-              <div class="row g-2 overflow-auto" id="episodesContainer" style="max-height: 400px;"></div>
+              <div id="episodesContainer" class="row g-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- Modal إدخال اسم المستخدم عند التسجيل أول مرة -->
-  <div class="modal fade" id="usernameModal" data-bs-backdrop="static" tabindex="-1">
+  <!-- Modal إجباري لاختيار Username للمستخدمين الجدد -->
+  <div class="modal fade" id="usernameModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content bg-dark text-white border-secondary p-3">
-        
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold">اختر اسم مستخدم (Username)</h5>
+      <div class="modal-content bg-dark text-white border-info">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-id-card me-2"></i> اختر اسم مستعار فريد</h5>
         </div>
-
         <div class="modal-body">
+          <p class="small text-secondary mb-3">مرحباً بك! لإكمال إعداد حسابك، يرجى اختيار Username خاص بك.</p>
           <form id="setup-username-form">
             <div class="mb-3">
-              <label class="form-label text-secondary small">اسم المستخدم الفريد بالإنجليزية (بدون مسافات)</label>
               <div class="input-group">
-                <span class="input-group-text bg-secondary text-white border-secondary">@</span>
-                <input type="text" id="setup-username-input" class="form-control bg-dark text-white border-secondary" required placeholder="e.g. abdulhadi">
+                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                <input type="text" id="setup-username-input" class="form-control bg-dark text-white border-secondary" placeholder="username" required pattern="^[a-zA-Z0-9_]+$">
               </div>
-              <div id="setup-username-error" class="text-danger small mt-2 d-none"></div>
             </div>
+            <div id="setup-username-error" class="text-danger small mb-2 d-none"></div>
             <button type="submit" class="btn btn-info w-100 fw-bold">حفظ ومتابعة</button>
           </form>
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <!-- ملف الجافاسكريبت الرئيسي -->
-  <script src="app_3.js"></script>
+  <!-- Modal عرض المتابعين والمتابعون -->
+  <div class="modal fade" id="followersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary py-2">
+          <h6 class="modal-title fw-bold text-info" id="followersModalTitle">قائمة المستخدمين</h6>
+          <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-2" style="max-height: 300px; overflow-y: auto;" id="followersModalList"></div>
+      </div>
+    </div>
+  </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Firebase Setup -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
+      authDomain: "cinema-5321b.firebaseapp.com",
+      projectId: "cinema-5321b",
+      storageBucket: "cinema-5321b.firebasestorage.app",
+      messagingSenderId: "286569379324",
+      appId: "1:286569379324:web:256b0c9d9f04c0d0ccee79",
+      measurementId: "G-BSRJLZXNDC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    window.db = db;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+    window.collection = collection;
+    window.query = query;
+    window.where = where;
+    window.getDocs = getDocs;
+
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        signInWithPopup(auth, provider).catch(err => console.error("Login Error: ", err));
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        signOut(auth).then(() => location.reload());
+      });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        window.currentUser = user;
+        if (loginBtn) loginBtn.classList.add('d-none');
+        if (userInfo) userInfo.classList.remove('d-none');
+        
+        if (typeof window.handleUserLogin === 'function') {
+          await window.handleUserLogin(user);
+        }
+        if (typeof window.syncUserDataFromCloud === 'function') {
+          await window.syncUserDataFromCloud();
+        }
+      } else {
+        window.currentUser = null;
+        if (loginBtn) loginBtn.classList.remove('d-none');
+        if (userInfo) userInfo.classList.add('d-none');
+      }
+    });
+  </script>
+
+  <script src="./app.js"></script>
 </body>
 </html>
