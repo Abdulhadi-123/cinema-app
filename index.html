@@ -123,6 +123,23 @@
 
           <div class="border-top border-secondary pt-3 mt-3">
             <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> الإحصائيات:</h6>
+            
+            <!-- خانات المتابعين والمتابعون الجديدة -->
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <div class="p-2 bg-dark border border-secondary rounded text-center" style="cursor: pointer;" onclick="openFollowersModal('followers')">
+                  <div class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-users me-1"></i>المتابِعون</div>
+                  <div id="stat-followers-count" class="fw-bold text-white">0</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 bg-dark border border-secondary rounded text-center" style="cursor: pointer;" onclick="openFollowersModal('following')">
+                  <div class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-user-check me-1"></i>المتابَعون</div>
+                  <div id="stat-following-count" class="fw-bold text-white">0</div>
+                </div>
+              </div>
+            </div>
+
             <div class="row text-center g-2">
               <div class="col-6 mb-2">
                 <div class="p-2 bg-secondary bg-opacity-25 rounded">
@@ -134,18 +151,6 @@
                 <div class="p-2 bg-secondary bg-opacity-25 rounded">
                   <div class="text-secondary" style="font-size: 11px;">الحلقات</div>
                   <div id="stat-ep-count" class="fw-bold text-white fs-5">0</div>
-                </div>
-              </div>
-              <div class="col-6" style="cursor: pointer;" onclick="openFollowersModal('followers')">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded hover-bg-secondary">
-                  <div class="text-secondary" style="font-size: 11px;">المتابِعون 👥</div>
-                  <div id="stat-followers-count" class="fw-bold text-info fs-5">0</div>
-                </div>
-              </div>
-              <div class="col-6" style="cursor: pointer;" onclick="openFollowersModal('following')">
-                <div class="p-2 bg-secondary bg-opacity-25 rounded hover-bg-secondary">
-                  <div class="text-secondary" style="font-size: 11px;">المتابَعون ➕</div>
-                  <div id="stat-following-count" class="fw-bold text-info fs-5">0</div>
                 </div>
               </div>
             </div>
@@ -227,15 +232,17 @@
     </div>
   </div>
 
-  <!-- Modal عرض المتابعين والمتابعون -->
+  <!-- Modal عرض قائمة المتابعين والمتابعون -->
   <div class="modal fade" id="followersModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content bg-dark text-white border-secondary">
         <div class="modal-header border-secondary py-2">
-          <h6 class="modal-title fw-bold text-info" id="followersModalTitle">قائمة المستخدمين</h6>
-          <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+          <h6 class="modal-title fs-6 fw-bold" id="followersModalTitle">المتابعين</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-2" style="max-height: 300px; overflow-y: auto;" id="followersModalList"></div>
+        <div class="modal-body p-2" id="followersModalList" style="max-height: 250px; overflow-y: auto;">
+          <!-- يتم تعبئتها برمجياً -->
+        </div>
       </div>
     </div>
   </div>
