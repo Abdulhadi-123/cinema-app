@@ -180,7 +180,6 @@ window.openProfilePage = function() {
   document.getElementById('main-content-area').classList.add('d-none');
   document.getElementById('profile-page-area').classList.remove('d-none');
   
-  // حقن حقل البحث والإضافة داخل قسم البروفايل إن لم يكن موجوداً
   injectProfileSearchBox();
   renderProfileWatchedCards();
 };
@@ -232,7 +231,7 @@ async function handleProfileSearch() {
       const poster = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/100x150/1e293b/ffffff?text=No+Image';
       const isAlreadyWatched = watchedList.includes(item.id);
 
-      const card = document.createElement('divcol' || 'div');
+      const card = document.createElement('div');
       card.className = 'col-6 col-sm-3';
       card.innerHTML = `
         <div class="card bg-dark border-secondary p-1 text-center" style="font-size: 11px;">
@@ -250,7 +249,7 @@ async function handleProfileSearch() {
           saveData();
           updateUIWithUserData();
           renderProfileWatchedCards();
-          handleProfileSearch(); // تحديث حالة الأزرار
+          handleProfileSearch();
         }
       });
 
