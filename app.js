@@ -174,15 +174,94 @@ function updateUIWithUserData() {
   if (editDisplay) editDisplay.value = userProfileData.displayName;
 }
 
-// فتح صفحة البروفايل المستقلة
+// فتح صفحة البروفايل المستقلة وتضمين حقل البحث المباشر للإضافة
 window.openProfilePage = function() {
   if (!userProfileData) return;
   document.getElementById('main-content-area').classList.add('d-none');
   document.getElementById('profile-page-area').classList.remove('d-none');
+  
+  // حقن حقل البحث والإضافة داخل قسم البروفايل إن لم يكن موجوداً
+  injectProfileSearchBox();
   renderProfileWatchedCards();
 };
 
-// عرض الكاردز في البروفايل (باللغة الإنجليزية)
+function injectProfileSearchBox() {
+  const watchedCol = document.querySelector('#profile-page-area .col-md-8');
+  if (!watchedCol) return;
+  
+  if (!document.getElementById('profile-search-container')) {
+    const searchDiv = document.createElement('div');
+    searchDiv.id = 'profile-search-container';
+    searchDiv.className = 'mb-4';
+    searchDiv.innerHTML = `
+      <div class="input-group">
+        <input type="text" id="profile-search-input" class="form-control bg-dark text-white border-secondary" placeholder="ابحث لإضافة عمل لقائمتك...">
+        <button class="btn btn-outline-info" type="button" id="profile-search-btn"><i class="fa-solid fa-plus"></i> بحث وإضافة</button>
+      </div>
+      <div id="profile-search-results" class="row g-2 mt-2"></div>
+    `;
+    watchedCol.insertBefore(searchDiv, document.getElementById('profile-watched-grid'));
+
+    document.getElementById('profile-search-btn').addEventListener('click', handleProfileSearch);
+    document.getElementById('profile-search-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleProfileSearch();
+    });
+  }
+}
+
+async function handleProfileSearch() {
+  const input = document.getElementById('profile-search-input');
+  const resultsContainer = document.getElementById('profile-search-results');
+  const queryText = input.value.trim();
+  if (!queryText) return;
+
+  resultsContainer.innerHTML = `<div class="text-center text-info py-2"><div class="spinner-border spinner-border-sm"></div> جاري البحث...</div>`;
+  try {
+    const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(queryText)}`);
+    const data = await res.json();
+    const items = (data.results || []).filter(i => i.media_type === 'movie' || i.media_type === 'tv');
+
+    resultsContainer.innerHTML = '';
+    if (items.length === 0) {
+      resultsContainer.innerHTML = `<div class="text-muted small">لم يتم العثور على نتائج.</div>`;
+      return;
+    }
+
+    items.slice(0, 4).forEach(item => {
+      const title = item.title || item.name;
+      const poster = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/100x150/1e293b/ffffff?text=No+Image';
+      const isAlreadyWatched = watchedList.includes(item.id);
+
+      const card = document.createElement('divcol' || 'div');
+      card.className = 'col-6 col-sm-3';
+      card.innerHTML = `
+        <div class="card bg-dark border-secondary p-1 text-center" style="font-size: 11px;">
+          <img src="${poster}" class="rounded w-100" style="height: 100px; object-fit: cover;">
+          <div class="text-white text-truncate mt-1 fw-bold">${title}</div>
+          <button class="btn btn-sm ${isAlreadyWatched ? 'btn-success' : 'btn-outline-info'} mt-1 py-0 px-1" style="font-size: 10px;">
+            ${isAlreadyWatched ? '<i class="fa-solid fa-check"></i> تمت المشاهدة' : '<i class="fa-solid fa-plus"></i> إضافة'}
+          </button>
+        </div>
+      `;
+
+      card.querySelector('button').addEventListener('click', () => {
+        if (!watchedList.includes(item.id)) {
+          watchedList.push(item.id);
+          saveData();
+          updateUIWithUserData();
+          renderProfileWatchedCards();
+          handleProfileSearch(); // تحديث حالة الأزرار
+        }
+      });
+
+      resultsContainer.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// عرض الكاردز في البروفايل
 async function renderProfileWatchedCards() {
   const container = document.getElementById('profile-watched-grid');
   if (!container) return;
@@ -204,7 +283,6 @@ async function renderProfileWatchedCards() {
   for (const id of allIds) {
     try {
       let mediaType = 'tv';
-      // تم التثبيت على اللغة الإنجليزية en-US
       let res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=en-US`);
       let data = await res.json();
 
@@ -367,10 +445,9 @@ window.syncUserDataFromCloud = async function() {
 };
 
 // ==========================================
-// 3️⃣ جلب وعرض المحتوى (باللغة الإنجليزية حصرياً)
+// 3️⃣ جلب وعرض المحتوى
 // ==========================================
 function getEndpoint(category, page = 1) {
-  // تم تثبيت لغة الـ API على en-US دائماً لضمان عدم تعريب الأسماء أو البوسترات
   if (category === 'movies') return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=${page}`;
   if (category === 'series') return `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=en-US&page=${page}`;
   return `${BASE_URL}/trending/all/day?api_key=${API_KEY}&language=en-US&page=${page}`;
@@ -460,7 +537,7 @@ function toggleWatchedMovie(itemId, btn) {
 }
 
 // ==========================================
-// 4️⃣ تفاصيل العمل والحلقات (باللغة الإنجليزية)
+// 4️⃣ تفاصيل العمل والحلقات
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
   const modalElement = document.getElementById('movieDetailModal');
@@ -479,7 +556,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   modal.show();
 
   try {
-    // تم التثبيت على en-US
     const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=en-US`);
     const data = await res.json();
 
@@ -503,7 +579,6 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       document.getElementById('trailerContainer').classList.remove('d-none');
     }
 
-    // تم التثبيت على en-US
     const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=en-US`);
     const cData = await cRes.json();
     const castContainer = document.getElementById('castContainer');
@@ -542,7 +617,6 @@ async function fetchEpisodes(tvId, seasonNum) {
   container.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
 
   try {
-    // تم التثبيت على en-US
     const res = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNum}?api_key=${API_KEY}&language=en-US`);
     const data = await res.json();
     container.innerHTML = '';
@@ -682,7 +756,6 @@ if (searchForm) {
       sectionTitle.textContent = `${translations[currentLang].searchResults} "${q}"`;
       moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info"></div></div>`;
       try {
-        // تم التثبيت على en-US لنتائج البحث أيضاً
         const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(q)}`);
         const data = await res.json();
         displayItems((data.results || []).filter(i => i.media_type === 'movie' || i.media_type === 'tv'));
