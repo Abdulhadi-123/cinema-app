@@ -5,7 +5,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 let currentLang = 'ar-SA';
 let currentCategory = 'trending';
 let userProfileData = null;
-let viewedProfileData = null; 
+let viewedProfileData = null; // لتخزين بيانات البروفايل الذي يتم استعراضه حالياً
 
 let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
@@ -101,8 +101,7 @@ document.getElementById('setup-username-form')?.addEventListener('submit', async
     favorites: favorites,
     watchedList: watchedList,
     watchedEpisodes: watchedEpisodes,
-    following: followingList,
-    followers: []
+    following: followingList
   };
 
   await window.setDoc(userDocRef, newProfile, { merge: true });
@@ -126,31 +125,13 @@ function updateUIWithUserData() {
   if (handleSpan) handleSpan.textContent = `@${userProfileData.username}`;
 }
 
+// فتح بروفايل المستخدم الحالي
 window.openMyProfile = function() {
   if (!userProfileData) return;
   openUserProfile(userProfileData);
 };
 
-// دالة جلب عدد المتابعين الفعليين من قاعدة البيانات لكل مستخدم
-async function fetchUserFollowersCount(userId) {
-  try {
-    const usersRef = window.collection(window.db, "users");
-    const qSnapshot = await window.getDocs(usersRef);
-    let count = 0;
-    qSnapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      const userFollowing = data.following || [];
-      if (userFollowing.includes(userId)) {
-        count++;
-      }
-    });
-    return count;
-  } catch (e) {
-    console.error(e);
-    return 0;
-  }
-}
-
+// فتح صفحة أي بروفايل (سواء لك أو لمستخدم آخر)
 async function openUserProfile(profileObj) {
   viewedProfileData = profileObj;
   document.getElementById('main-content-area').classList.add('d-none');
@@ -158,6 +139,7 @@ async function openUserProfile(profileObj) {
 
   const isMyProfile = userProfileData && userProfileData.uid === viewedProfileData.uid;
 
+  // إظهار أو إخفاء نموذج التعديل وزر المتابعة حسب الملكية
   const editFormContainer = document.getElementById('edit-profile-section');
   const followBtnContainer = document.getElementById('follow-btn-container');
 
@@ -181,6 +163,7 @@ async function openUserProfile(profileObj) {
     }
   }
 
+  // تعبئة البيانات في الصفحة (اعتماداً على البروفايل المستعرض)
   const pAvatar = document.getElementById('profile-page-avatar');
   const pName = document.getElementById('profile-page-name');
   const pUser = document.getElementById('profile-page-username');
@@ -191,11 +174,10 @@ async function openUserProfile(profileObj) {
   if (pUser) pUser.textContent = `@${viewedProfileData.username || ''}`;
   if (pJoined) pJoined.textContent = `انضم في: ${viewedProfileData.joinedAt || '2026'}`;
 
+  // حساب وتحديث الإحصائيات من البروفايل المستعرض مباشرة
   const currentFavs = viewedProfileData.favorites || [];
   const currentWatchedMovies = viewedProfileData.watchedList || [];
   const currentWatchedEps = viewedProfileData.watchedEpisodes || [];
-  const currentFollowingCount = (viewedProfileData.following || []).length;
-  const followersCount = await fetchUserFollowersCount(viewedProfileData.uid);
 
   const statsContainer = document.querySelector('#profile-page-area .border-top .row');
   if (statsContainer) {
@@ -210,18 +192,6 @@ async function openUserProfile(profileObj) {
         <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
           <div class="text-secondary" style="font-size: 11px;">أفلام مشاهدة 🎬</div>
           <div class="fw-bold text-white fs-5">${currentWatchedMovies.length}</div>
-        </div>
-      </div>
-      <div class="col-6 mb-2">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">المتابِعون 👤</div>
-          <div class="fw-bold text-info fs-5">${followersCount}</div>
-        </div>
-      </div>
-      <div class="col-6 mb-2">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">المتابَعون 👥</div>
-          <div class="fw-bold text-info fs-5">${currentFollowingCount}</div>
         </div>
       </div>
       <div class="col-6">
@@ -244,6 +214,7 @@ async function openUserProfile(profileObj) {
   renderProfileWatchedCards(viewedProfileData);
 }
 
+// نظام المتابعة
 window.toggleFollowUser = async function(targetUid) {
   if (!window.currentUser) {
     alert('يرجى تسجيل الدخول أولاً لمتابعة المستخدمين.');
@@ -257,14 +228,11 @@ window.toggleFollowUser = async function(targetUid) {
     followingList.push(targetUid);
   }
 
-  if (userProfileData && userProfileData.uid === window.currentUser.uid) {
-    userProfileData.following = followingList;
-  }
-
-  await saveData();
+  saveData();
   openUserProfile(viewedProfileData);
 };
 
+// عرض الأعمال التي تابعها المستخدم في البروفايل
 async function renderProfileWatchedCards(profileObj) {
   const container = document.getElementById('profile-watched-grid');
   if (!container) return;
@@ -328,6 +296,7 @@ async function renderProfileWatchedCards(profileObj) {
   }
 }
 
+// تحويل الصورة وضغطها
 function convertFileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -683,7 +652,7 @@ function toggleWatchedEp(epKey, btn) {
 }
 
 // ==========================================
-// 5️⃣ المفضلة والبحث الشامل
+// 5️⃣ المفضلة والبحث الشامل (أفلام، مسلسلات، ومستخدمين)
 // ==========================================
 function toggleFavorite(item, btn) {
   const idx = favorites.findIndex(f => f.id === item.id);
