@@ -191,13 +191,10 @@ async function openUserProfile(profileObj) {
   if (pUser) pUser.textContent = `@${viewedProfileData.username || ''}`;
   if (pJoined) pJoined.textContent = `انضم في: ${viewedProfileData.joinedAt || '2026'}`;
 
-  // حساب أعداد المتابعة
   const currentFavs = viewedProfileData.favorites || [];
   const currentWatchedMovies = viewedProfileData.watchedList || [];
   const currentWatchedEps = viewedProfileData.watchedEpisodes || [];
   const currentFollowingCount = (viewedProfileData.following || []).length;
-  
-  // جلب عدد المتابعين الحقيقي
   const followersCount = await fetchUserFollowersCount(viewedProfileData.uid);
 
   const statsContainer = document.querySelector('#profile-page-area .border-top .row');
