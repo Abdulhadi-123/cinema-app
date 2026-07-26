@@ -131,6 +131,26 @@ window.openMyProfile = function() {
   openUserProfile(userProfileData);
 };
 
+// دالة لجلب عدد وم قائمة المتابِعين (الأشخاص الذين يتابعون هذا المستخدم)
+async function getFollowersData(targetUid) {
+  if (!window.db) return [];
+  try {
+    const usersRef = window.collection(window.db, "users");
+    const qSnapshot = await window.getDocs(usersRef);
+    let followers = [];
+    qSnapshot.forEach(docSnap => {
+      const uData = docSnap.data();
+      if (uData.following && Array.isArray(uData.following) && uData.following.includes(targetUid)) {
+        followers.push(uData);
+      }
+    });
+    return followers;
+  } catch (e) {
+    console.error("Error fetching followers:", e);
+    return [];
+  }
+}
+
 // فتح صفحة أي بروفايل (سواء لك أو لمستخدم آخر)
 async function openUserProfile(profileObj) {
   viewedProfileData = profileObj;
@@ -163,7 +183,7 @@ async function openUserProfile(profileObj) {
     }
   }
 
-  // تعبئة البيانات في الصفحة (اعتماداً على البروفايل المستعرض)
+  // تعبئة البيانات الأساسية في البروفايل
   const pAvatar = document.getElementById('profile-page-avatar');
   const pName = document.getElementById('profile-page-name');
   const pUser = document.getElementById('profile-page-username');
@@ -174,45 +194,85 @@ async function openUserProfile(profileObj) {
   if (pUser) pUser.textContent = `@${viewedProfileData.username || ''}`;
   if (pJoined) pJoined.textContent = `انضم في: ${viewedProfileData.joinedAt || '2026'}`;
 
-  // حساب وتحديث الإحصائيات من البروفايل المستعرض مباشرة
+  // حساب الإحصائيات للأفلام والمفضلة والحلقات
   const currentFavs = viewedProfileData.favorites || [];
   const currentWatchedMovies = viewedProfileData.watchedList || [];
   const currentWatchedEps = viewedProfileData.watchedEpisodes || [];
+  const currentFollowing = viewedProfileData.following || [];
 
-  const statsContainer = document.querySelector('#profile-page-area .border-top .row');
-  if (statsContainer) {
-    statsContainer.innerHTML = `
-      <div class="col-6 mb-2">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">المفضلة ❤️</div>
-          <div class="fw-bold text-white fs-5">${currentFavs.length}</div>
-        </div>
-      </div>
-      <div class="col-6 mb-2">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">أفلام مشاهدة 🎬</div>
-          <div class="fw-bold text-white fs-5">${currentWatchedMovies.length}</div>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">حلقات متابعة 📺</div>
-          <div class="fw-bold text-white fs-5">${currentWatchedEps.length}</div>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
-          <div class="text-secondary" style="font-size: 11px;">ساعات المشاهدة ⏱️</div>
-          <div class="fw-bold text-info fs-5">
-            ${Math.round((currentWatchedMovies.length * 2) + (currentWatchedEps.length * 0.75))} س
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // جلب عدد المتابعين الحقيقيين من قاعدة البيانات
+  const followersList = await getFollowersData(viewedProfileData.uid);
+
+  // تحديث عدادات الإحصائيات في واجهة البروفايل
+  document.getElementById('stat-fav-count').textContent = currentFavs.length;
+  document.getElementById('stat-ep-count').textContent = currentWatchedEps.length;
+  document.getElementById('stat-followers-count').textContent = followersList.length;
+  document.getElementById('stat-following-count').textContent = currentFollowing.length;
 
   renderProfileWatchedCards(viewedProfileData);
 }
+
+// دالة فتح نافذة (Modal) عرض قائمة المتابِعين أو المتابَعين
+window.openFollowersModal = async function(type) {
+  if (!viewedProfileData) return;
+  const modalTitle = document.getElementById('followersModalTitle');
+  const modalList = document.getElementById('followersModalList');
+  
+  modalList.innerHTML = `<div class="text-center py-3"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
+  const modalElem = document.getElementById('followersModal');
+  bootstrap.Modal.getOrCreateInstance(modalElem).show();
+
+  let usersToDisplay = [];
+
+  if (type === 'followers') {
+    modalTitle.textContent = 'المتابِعون (Followers)';
+    usersToDisplay = await getFollowersData(viewedProfileData.uid);
+  } else {
+    modalTitle.textContent = 'المتابَعون (Following)';
+    const followingIds = viewedProfileData.following || [];
+    if (followingIds.length > 0 && window.db) {
+      try {
+        const usersRef = window.collection(window.db, "users");
+        const qSnapshot = await window.getDocs(usersRef);
+        qSnapshot.forEach(docSnap => {
+          const uData = docSnap.data();
+          if (followingIds.includes(uData.uid)) {
+            usersToDisplay.push(uData);
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
+  if (usersToDisplay.length === 0) {
+    modalList.innerHTML = `<div class="text-center text-muted small py-3">لا توجد عناصر لعرضها.</div>`;
+    return;
+  }
+
+  modalList.innerHTML = '';
+  usersToDisplay.forEach(u => {
+    const item = document.createElement('div');
+    item.className = 'd-flex align-items-center justify-content-between p-2 mb-1 bg-secondary bg-opacity-25 rounded hover-bg-secondary cursor-pointer';
+    item.style.cursor = 'pointer';
+    item.innerHTML = `
+      <div class="d-flex align-items-center gap-2">
+        <img src="${u.avatar || 'https://placehold.co/100'}" class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover;">
+        <div>
+          <div class="fw-bold small text-white text-truncate" style="max-width: 140px;">${u.displayName}</div>
+          <div class="text-info" style="font-size: 10px;">@${u.username}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline-info py-0 px-2" style="font-size: 11px;">عرض</button>
+    `;
+    item.addEventListener('click', () => {
+      bootstrap.Modal.getInstance(modalElem).hide();
+      openUserProfile(u);
+    });
+    modalList.appendChild(item);
+  });
+};
 
 // نظام المتابعة
 window.toggleFollowUser = async function(targetUid) {
