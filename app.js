@@ -148,8 +148,8 @@ async function openUserProfile(profileObj) {
     if (followBtnContainer) followBtnContainer.classList.add('d-none');
     const editUser = document.getElementById('edit-username');
     const editDisplay = document.getElementById('edit-displayname');
-    if (editUser) editUser.value = userProfileData.username;
-    if (editDisplay) editDisplay.value = userProfileData.displayName;
+    if (editUser) editUser.value = userProfileData.username || '';
+    if (editDisplay) editDisplay.value = userProfileData.displayName || '';
   } else {
     if (editFormContainer) editFormContainer.classList.add('d-none');
     if (followBtnContainer) {
@@ -163,18 +163,18 @@ async function openUserProfile(profileObj) {
     }
   }
 
-  // تعبئة البيانات في الصفحة
+  // تعبئة البيانات في الصفحة (اعتماداً على البروفايل المستعرض)
   const pAvatar = document.getElementById('profile-page-avatar');
   const pName = document.getElementById('profile-page-name');
   const pUser = document.getElementById('profile-page-username');
   const pJoined = document.getElementById('profile-page-joined');
 
-  if (pAvatar) pAvatar.src = viewedProfileData.avatar;
-  if (pName) pName.textContent = viewedProfileData.displayName;
-  if (pUser) pUser.textContent = `@${viewedProfileData.username}`;
+  if (pAvatar) pAvatar.src = viewedProfileData.avatar || 'https://cdn-icons-png.flaticon.com/512/3172/3172522.png';
+  if (pName) pName.textContent = viewedProfileData.displayName || '';
+  if (pUser) pUser.textContent = `@${viewedProfileData.username || ''}`;
   if (pJoined) pJoined.textContent = `انضم في: ${viewedProfileData.joinedAt || '2026'}`;
 
-  // حساب وتحديث الإحصائيات
+  // حساب وتحديث الإحصائيات من البروفايل المستعرض مباشرة
   const currentFavs = viewedProfileData.favorites || [];
   const currentWatchedMovies = viewedProfileData.watchedList || [];
   const currentWatchedEps = viewedProfileData.watchedEpisodes || [];
@@ -734,12 +734,10 @@ if (searchForm) {
     sectionTitle.textContent = `${translations[currentLang].searchResults} "${q}"`;
     moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info"></div></div>`;
 
-    // إذا بدأ البحث بـ @ أو كان بحثاً عن مستخدم في قاعدة البيانات
     if (q.startsWith('@') || (window.db && window.query)) {
       try {
         const cleanQuery = q.startsWith('@') ? q.substring(1).toLowerCase() : q.toLowerCase();
         const usersRef = window.collection(window.db, "users");
-        // بحث تقريبي أو مطابق بالـ username
         const qSnapshot = await window.getDocs(usersRef);
         let foundUsers = [];
         qSnapshot.forEach(docSnap => {
@@ -772,7 +770,6 @@ if (searchForm) {
       }
     }
 
-    // البحث العادي في الأفلام والمسلسلات
     try {
       const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(q)}`);
       const data = await res.json();
