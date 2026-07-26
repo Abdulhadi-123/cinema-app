@@ -131,7 +131,7 @@ function updateUIWithUserData() {
   if (pUser) pUser.textContent = `@${userProfileData.username}`;
   if (pJoined) pJoined.textContent = `انضم في: ${userProfileData.joinedAt || '2026'}`;
 
-  // حساب وتحديث الإحصائيات في البروفايل (مع بطاقات مفصلة)
+  // حساب وتحديث الإحصائيات في البروفايل
   const currentFavs = userProfileData.favorites || favorites;
   const currentWatchedMovies = userProfileData.watchedList || watchedList;
   const currentWatchedEps = userProfileData.watchedEpisodes || watchedEpisodes;
@@ -182,7 +182,7 @@ window.openProfilePage = function() {
   renderProfileWatchedCards();
 };
 
-// عرض الكاردز في البروفايل
+// عرض الكاردز في البروفايل (باللغة الإنجليزية)
 async function renderProfileWatchedCards() {
   const container = document.getElementById('profile-watched-grid');
   if (!container) return;
@@ -204,11 +204,12 @@ async function renderProfileWatchedCards() {
   for (const id of allIds) {
     try {
       let mediaType = 'tv';
-      let res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${currentLang}`);
+      // تم التثبيت على اللغة الإنجليزية en-US
+      let res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=en-US`);
       let data = await res.json();
 
       if (!data.id || data.success === false) {
-        res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${currentLang}`);
+        res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=en-US`);
         data = await res.json();
         mediaType = 'movie';
       }
@@ -366,12 +367,13 @@ window.syncUserDataFromCloud = async function() {
 };
 
 // ==========================================
-// 3️⃣ جلب وعرض المحتوى
+// 3️⃣ جلب وعرض المحتوى (باللغة الإنجليزية حصرياً)
 // ==========================================
 function getEndpoint(category, page = 1) {
-  if (category === 'movies') return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
-  if (category === 'series') return `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
-  return `${BASE_URL}/trending/all/day?api_key=${API_KEY}&language=${currentLang}&page=${page}`;
+  // تم تثبيت لغة الـ API على en-US دائماً لضمان عدم تعريب الأسماء أو البوسترات
+  if (category === 'movies') return `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=${page}`;
+  if (category === 'series') return `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=en-US&page=${page}`;
+  return `${BASE_URL}/trending/all/day?api_key=${API_KEY}&language=en-US&page=${page}`;
 }
 
 async function fetchMultiplePages(category) {
@@ -458,13 +460,13 @@ function toggleWatchedMovie(itemId, btn) {
 }
 
 // ==========================================
-// 4️⃣ تفاصيل العمل والحلقات
+// 4️⃣ تفاصيل العمل والحلقات (باللغة الإنجليزية)
 // ==========================================
 async function openMovieDetails(itemId, mediaType = 'movie') {
   const modalElement = document.getElementById('movieDetailModal');
   const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
   
-  document.getElementById('modalTitle').textContent = 'جاري التحميل...';
+  document.getElementById('modalTitle').textContent = 'Loading...';
   document.getElementById('modalOverview').textContent = '';
   document.getElementById('trailerContainer').classList.add('d-none');
   document.getElementById('trailerIframe').src = '';
@@ -477,11 +479,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   modal.show();
 
   try {
-    const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${currentLang}`);
+    // تم التثبيت على en-US
+    const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=en-US`);
     const data = await res.json();
 
     document.getElementById('modalTitle').textContent = data.title || data.name;
-    document.getElementById('modalOverview').textContent = data.overview || 'لا يوجد ملخص متوفر.';
+    document.getElementById('modalOverview').textContent = data.overview || 'No overview available.';
 
     if (mediaType === 'movie') {
       if (epTabLi) epTabLi.classList.add('d-none');
@@ -500,7 +503,8 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
       document.getElementById('trailerContainer').classList.remove('d-none');
     }
 
-    const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${currentLang}`);
+    // تم التثبيت على en-US
+    const cRes = await fetch(`${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=en-US`);
     const cData = await cRes.json();
     const castContainer = document.getElementById('castContainer');
     (cData.cast || []).slice(0, 8).forEach(actor => {
@@ -525,7 +529,7 @@ function setupSeasons(seasons, tvId) {
   if (validSeasons.length === 0 && seasons.length > 0) validSeasons.push(...seasons);
 
   validSeasons.forEach(s => {
-    select.innerHTML += `<option value="${s.season_number}">${s.name || 'موسم ' + s.season_number} (${s.episode_count || 0} حلقة)</option>`;
+    select.innerHTML += `<option value="${s.season_number}">${s.name || 'Season ' + s.season_number} (${s.episode_count || 0} eps)</option>`;
   });
 
   if (validSeasons.length > 0) fetchEpisodes(tvId, validSeasons[0].season_number);
@@ -538,13 +542,14 @@ async function fetchEpisodes(tvId, seasonNum) {
   container.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
 
   try {
-    const res = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNum}?api_key=${API_KEY}&language=${currentLang}`);
+    // تم التثبيت على en-US
+    const res = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNum}?api_key=${API_KEY}&language=en-US`);
     const data = await res.json();
     container.innerHTML = '';
 
     const episodes = data.episodes || [];
     if (episodes.length === 0) {
-      container.innerHTML = `<div class="col-12 text-center text-muted py-3">لا توجد حلقات متاحة.</div>`;
+      container.innerHTML = `<div class="col-12 text-center text-muted py-3">No episodes available.</div>`;
       return;
     }
 
@@ -564,7 +569,7 @@ async function fetchEpisodes(tvId, seasonNum) {
             </button>
           </div>
           <div class="card-body p-2 d-flex flex-column justify-content-between">
-            <span class="badge bg-info text-dark w-auto">حلقة ${ep.episode_number}</span>
+            <span class="badge bg-info text-dark w-auto">Ep ${ep.episode_number}</span>
             <h6 class="card-title text-white fw-bold my-1 small text-truncate">${ep.name}</h6>
           </div>
         </div>
@@ -677,7 +682,8 @@ if (searchForm) {
       sectionTitle.textContent = `${translations[currentLang].searchResults} "${q}"`;
       moviesGrid.innerHTML = `<div class="col-12 text-center my-5"><div class="spinner-border text-info"></div></div>`;
       try {
-        const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=${currentLang}&query=${encodeURIComponent(q)}`);
+        // تم التثبيت على en-US لنتائج البحث أيضاً
+        const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(q)}`);
         const data = await res.json();
         displayItems((data.results || []).filter(i => i.media_type === 'movie' || i.media_type === 'tv'));
       } catch (e) { console.error(e); }
