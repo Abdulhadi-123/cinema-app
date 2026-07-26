@@ -131,10 +131,42 @@ function updateUIWithUserData() {
   if (pUser) pUser.textContent = `@${userProfileData.username}`;
   if (pJoined) pJoined.textContent = `انضم في: ${userProfileData.joinedAt || '2026'}`;
 
-  const statFavCount = document.getElementById('stat-fav-count');
-  const statEpCount = document.getElementById('stat-ep-count');
-  if (statFavCount) statFavCount.textContent = (userProfileData.favorites || favorites).length;
-  if (statEpCount) statEpCount.textContent = (userProfileData.watchedEpisodes || watchedEpisodes).length;
+  // حساب وتحديث الإحصائيات في البروفايل (مع بطاقات مفصلة)
+  const currentFavs = userProfileData.favorites || favorites;
+  const currentWatchedMovies = userProfileData.watchedList || watchedList;
+  const currentWatchedEps = userProfileData.watchedEpisodes || watchedEpisodes;
+
+  const statsContainer = document.querySelector('#profile-page-area .border-top .row');
+  if (statsContainer) {
+    statsContainer.innerHTML = `
+      <div class="col-6 mb-2">
+        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
+          <div class="text-secondary" style="font-size: 11px;">المفضلة ❤️</div>
+          <div id="stat-fav-count" class="fw-bold text-white fs-5">${currentFavs.length}</div>
+        </div>
+      </div>
+      <div class="col-6 mb-2">
+        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
+          <div class="text-secondary" style="font-size: 11px;">أفلام مشاهدة 🎬</div>
+          <div id="stat-movie-count" class="fw-bold text-white fs-5">${currentWatchedMovies.length}</div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
+          <div class="text-secondary" style="font-size: 11px;">حلقات متابعة 📺</div>
+          <div id="stat-ep-count" class="fw-bold text-white fs-5">${currentWatchedEps.length}</div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="p-2 bg-secondary bg-opacity-25 rounded text-center">
+          <div class="text-secondary" style="font-size: 11px;">ساعات المشاهدة ⏱️</div>
+          <div id="stat-hours-count" class="fw-bold text-info fs-5">
+            ${Math.round((currentWatchedMovies.length * 2) + (currentWatchedEps.length * 0.75))} س
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   const editUser = document.getElementById('edit-username');
   const editDisplay = document.getElementById('edit-displayname');
@@ -150,13 +182,12 @@ window.openProfilePage = function() {
   renderProfileWatchedCards();
 };
 
-// عرض الكاردز في البروفايل (تشمل القائمة watchedList والمسلسلات التي لها حلقات في watchedEpisodes)
+// عرض الكاردز في البروفايل
 async function renderProfileWatchedCards() {
   const container = document.getElementById('profile-watched-grid');
   if (!container) return;
   container.innerHTML = `<div class="col-12 text-center py-4"><div class="spinner-border text-info spinner-border-sm"></div></div>`;
 
-  // تجميع كل الـ IDs من قائمة watchedList ومن الحلقات في watchedEpisodes
   const uniqueIdsSet = new Set([...watchedList]);
   watchedEpisodes.forEach(epKey => {
     const tvId = epKey.split('_')[0];
@@ -172,11 +203,10 @@ async function renderProfileWatchedCards() {
   container.innerHTML = '';
   for (const id of allIds) {
     try {
-      let mediaType = 'tv'; // نبحث كمسلسل أولاً لتجنب خلطه بالأفلام التي تحمل نفس الـ ID
+      let mediaType = 'tv';
       let res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${currentLang}`);
       let data = await res.json();
 
-      // إذا لم يكن مسلسلاً صحيحاً، نبحث عنه كفيلم
       if (!data.id || data.success === false) {
         res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${currentLang}`);
         data = await res.json();
