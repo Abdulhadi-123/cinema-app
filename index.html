@@ -44,7 +44,7 @@
           </button>
           
           <div id="user-info" class="d-none d-flex align-items-center gap-2">
-            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;" onclick="openProfilePage()">
+            <div id="open-profile-btn" class="d-flex align-items-center gap-2 cursor-pointer p-1 rounded hover-bg-secondary" style="cursor: pointer;" onclick="openMyProfile()">
               <img id="user-avatar" src="" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
               <div class="d-flex flex-column">
                 <span id="user-name" class="small text-white fw-bold leading-none"></span>
@@ -58,7 +58,7 @@
         </div>
 
         <form class="d-flex" id="search-form">
-          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم أو مسلسل...">
+          <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أو @username...">
           <button class="btn btn-outline-info" type="submit" id="btn-search">بحث</button>
         </form>
 
@@ -73,14 +73,14 @@
     <div class="row g-3" id="movies-grid"></div>
   </div>
 
-  <!-- صفحة البروفايل المستقلة (تظهر عند الضغط على البروفايل) -->
+  <!-- صفحة البروفايل المستقلة -->
   <div class="container my-4 d-none" id="profile-page-area">
     <button class="btn btn-outline-secondary btn-sm mb-3" onclick="loadCategory('trending')">
       <i class="fa-solid fa-arrow-right me-1"></i> العودة للرئيسية
     </button>
     
     <div class="row">
-      <!-- معلومات البروفايل والتعديل -->
+      <!-- معلومات البروفايل والتعديل أو المتابعة -->
       <div class="col-md-4 mb-4">
         <div class="p-4 bg-secondary bg-opacity-10 border border-secondary rounded">
           <div class="text-center mb-3">
@@ -90,33 +90,39 @@
             <div id="profile-page-joined" class="text-secondary small mt-1"></div>
           </div>
 
-          <form id="profile-form">
-            <div class="mb-3">
-              <label class="form-label small text-secondary">اسم المستخدم (Username)</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text bg-secondary border-secondary text-white">@</span>
-                <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$">
+          <!-- زر المتابعة (يظهر عند زيارة بروفايل شخص آخر) -->
+          <div id="follow-btn-container" class="d-none"></div>
+
+          <!-- نموذج تعديل البروفايل (يظهر فقط لبروفايلك الشخصي) -->
+          <div id="edit-profile-section">
+            <form id="profile-form">
+              <div class="mb-3">
+                <label class="form-label small text-secondary">اسم المستخدم (Username)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                  <input type="text" id="edit-username" class="form-control bg-dark text-white border-secondary" required pattern="^[a-zA-Z0-9_]+$">
+                </div>
               </div>
-            </div>
 
-            <div class="mb-3">
-              <label class="form-label small text-secondary">الاسم المستعار</label>
-              <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
-            </div>
+              <div class="mb-3">
+                <label class="form-label small text-secondary">الاسم المستعار</label>
+                <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+              </div>
 
-            <div class="mb-3">
-              <label class="form-label small text-secondary">تغيير الصورة الشخصية</label>
-              <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
-            </div>
+              <div class="mb-3">
+                <label class="form-label small text-secondary">تغيير الصورة الشخصية</label>
+                <input type="file" id="edit-avatar-file" accept="image/*" class="form-control form-control-sm bg-dark text-white border-secondary">
+              </div>
 
-            <div id="profile-error" class="text-danger small mb-2 d-none"></div>
-            <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
+              <div id="profile-error" class="text-danger small mb-2 d-none"></div>
+              <div id="profile-success" class="text-success small mb-2 d-none">تم حفظ التغييرات بنجاح!</div>
 
-            <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
-          </form>
+              <button type="submit" id="save-profile-btn" class="btn btn-info btn-sm w-100 fw-bold mb-3">حفظ التغييرات</button>
+            </form>
+          </div>
 
           <div class="border-top border-secondary pt-3 mt-3">
-            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> إحصائياتك:</h6>
+            <h6 class="fw-bold text-info small mb-2"><i class="fa-solid fa-chart-pie me-1"></i> الإحصائيات:</h6>
             <div class="row text-center g-2">
               <div class="col-6">
                 <div class="p-2 bg-secondary bg-opacity-25 rounded">
@@ -135,11 +141,11 @@
         </div>
       </div>
 
-      <!-- عرض قوائم المتابعة والمشاهدة الخاصة بالمستخدم -->
+      <!-- عرض قوائم المشاهدة الخاصة بالمستخدم المستعرض -->
       <div class="col-md-8">
         <h4 class="fw-bold mb-3 text-info"><i class="fa-solid fa-eye me-2"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h4>
         <div class="row g-2" id="profile-watched-grid">
-          <!-- الكاردز الصغيرة هنا -->
+          <!-- الكاردز هنا -->
         </div>
       </div>
     </div>
@@ -261,22 +267,22 @@
       });
     }
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        window.currentUser = user;
-        if (loginBtn) loginBtn.classList.add('d-none');
-        if (userInfo) userInfo.classList.remove('d-none');
+    OnAuthStateChanged(auth, async (user) => {
+      If (user) {
+        Window.currentUser = user;
+        If (loginBtn) loginBtn.classList.add('d-none');
+        If (userInfo) userInfo.classList.remove('d-none');
         
-        if (typeof window.handleUserLogin === 'function') {
-          await window.handleUserLogin(user);
+        If (typeof window.handleUserLogin === 'function') {
+          Await window.handleUserLogin(user);
         }
-        if (typeof window.syncUserDataFromCloud === 'function') {
-          await window.syncUserDataFromCloud();
+        If (typeof window.syncUserDataFromCloud === 'function') {
+          Await window.syncUserDataFromCloud();
         }
       } else {
-        window.currentUser = null;
-        if (loginBtn) loginBtn.classList.remove('d-none');
-        if (userInfo) userInfo.classList.add('d-none');
+        Window.currentUser = null;
+        If (loginBtn) loginBtn.classList.remove('d-none');
+        If (userInfo) userInfo.classList.add('d-none');
       }
     });
   </script>
