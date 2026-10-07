@@ -35,6 +35,10 @@
           <li class="nav-item"><a class="nav-link" href="#" id="nav-movies" onclick="loadCategory('movies')">الأفلام</a></li>
           <li class="nav-item"><a class="nav-link" href="#" id="nav-series" onclick="loadCategory('series')">المسلسلات</a></li>
           <li class="nav-item"><a class="nav-link" href="#" id="nav-favs" onclick="loadCategory('favorites')"><span id="nav-fav-text">المفضلة</span> ❤️</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-watchlist" onclick="loadCategory('watchlist')"><span id="nav-watchlist-text">قائمة المشاهدة</span> <i class="fa-regular fa-clock"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-upnext" onclick="loadCategory('upnext')"><span id="nav-upnext-text">التالي</span> <i class="fa-solid fa-forward"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-diary" onclick="loadCategory('diary')"><span id="nav-diary-text">اليوميات</span> <i class="fa-regular fa-calendar-check"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-activity" onclick="loadCategory('activity')"><span id="nav-activity-text">النشاط</span> <i class="fa-solid fa-users"></i></a></li>
         </ul>
 
         <!-- auth container -->
@@ -182,6 +186,23 @@
 
           <div class="tab-content">
             <div class="tab-pane fade show active" id="info-tab-pane">
+              <div id="socialActionPanel" class="social-action-panel mb-3">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <button id="detail-watchlist-btn" class="btn btn-outline-info btn-sm"><i class="fa-regular fa-clock me-1"></i> Watchlist</button>
+                  <button id="detail-watched-btn" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-eye me-1"></i> Watched</button>
+                  <button id="detail-log-btn" class="btn btn-outline-light btn-sm"><i class="fa-regular fa-calendar-plus me-1"></i> Log</button>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                  <span class="small text-secondary">Your rating</span>
+                  <div id="detail-rating-stars" class="rating-stars" aria-label="rating"></div>
+                  <button id="clear-rating-btn" class="btn btn-link btn-sm text-secondary p-0">clear</button>
+                </div>
+                <div class="input-group input-group-sm">
+                  <textarea id="detail-review-text" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Write a review..."></textarea>
+                  <button id="save-review-btn" class="btn btn-info fw-bold">Post</button>
+                </div>
+                <div id="detail-action-status" class="small text-success mt-2 d-none"></div>
+              </div>
               <p id="modalOverview" class="text-secondary leading-relaxed"></p>
               <div id="trailerContainer" class="ratio ratio-16x9 mb-3 d-none rounded overflow-hidden">
                 <iframe id="trailerIframe" src="" allowfullscreen></iframe>

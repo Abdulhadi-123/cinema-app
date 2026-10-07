@@ -11,6 +11,12 @@ let favorites = JSON.parse(localStorage.getItem('cinema_favs')) || [];
 let watchedList = JSON.parse(localStorage.getItem('cinema_watched')) || [];
 let watchedEpisodes = JSON.parse(localStorage.getItem('cinema_watched_episodes')) || [];
 let followingList = JSON.parse(localStorage.getItem('cinema_following')) || [];
+let watchlist = JSON.parse(localStorage.getItem('cinema_watchlist')) || [];
+let ratings = JSON.parse(localStorage.getItem('cinema_ratings')) || {};
+let reviews = JSON.parse(localStorage.getItem('cinema_reviews')) || [];
+let diary = JSON.parse(localStorage.getItem('cinema_diary')) || [];
+let activities = JSON.parse(localStorage.getItem('cinema_activities')) || [];
+let currentDetailItem = null;
 
 const moviesGrid = document.getElementById('movies-grid');
 const searchForm = document.getElementById('search-form');
@@ -23,14 +29,14 @@ const translations = {
     logo: 'سينما', home: 'الرئيسية', movies: 'الأفلام', series: 'المسلسلات', favs: 'المفضلة',
     searchPlaceholder: 'ابحث عن فيلم، مسلسل، أو مستخدم (@username)...', searchBtn: 'بحث', langBtn: 'English',
     trendingTitle: 'المقترحات والأشياء الشائعة 🔥', moviesTitle: 'أفضل الأفلام 🎬',
-    seriesTitle: 'أفضل المسلسلات 📺', favsTitle: 'قائمتي المفضلة ❤️',
+    seriesTitle: 'أفضل المسلسلات 📺', favsTitle: 'قائمتي المفضلة ❤️', watchlistTitle: 'قائمة المشاهدة ⏱️', upnextTitle: 'التالي للمشاهدة ▶️', diaryTitle: 'يوميات المشاهدة 📅', activityTitle: 'نشاط الأصدقاء 👥',
     searchResults: 'نتائج البحث عن: ', noResults: 'لم يتم العثور على نتائج 🔍', noFavs: 'لا توجد عناصر في المفضلة بعد 💔'
   },
   'en-US': {
     logo: 'Cinema', home: 'Home', movies: 'Movies', series: 'TV Series', favs: 'Favorites',
     searchPlaceholder: 'Search movie, show, or @username...', searchBtn: 'Search', langBtn: 'العربية',
     trendingTitle: 'Trending & Recommended 🔥', moviesTitle: 'Popular Movies 🎬',
-    seriesTitle: 'Popular TV Series 📺', favsTitle: 'My Favorites ❤️',
+    seriesTitle: 'Popular TV Series 📺', favsTitle: 'My Favorites ❤️', watchlistTitle: 'My Watchlist ⏱️', upnextTitle: 'Up Next ▶️', diaryTitle: 'Watch Diary 📅', activityTitle: 'Friends Activity 👥',
     searchResults: 'Search results for: ', noResults: 'No results found 🔍', noFavs: 'No favorites added yet 💔'
   }
 };
@@ -101,7 +107,8 @@ document.getElementById('setup-username-form')?.addEventListener('submit', async
     favorites: favorites,
     watchedList: watchedList,
     watchedEpisodes: watchedEpisodes,
-    following: followingList
+    following: followingList,
+    watchlist, ratings, reviews, diary, activities
   };
 
   await window.setDoc(userDocRef, newProfile, { merge: true });
@@ -444,6 +451,11 @@ async function saveData() {
   localStorage.setItem('cinema_watched', JSON.stringify(watchedList));
   localStorage.setItem('cinema_watched_episodes', JSON.stringify(watchedEpisodes));
   localStorage.setItem('cinema_following', JSON.stringify(followingList));
+  localStorage.setItem('cinema_watchlist', JSON.stringify(watchlist));
+  localStorage.setItem('cinema_ratings', JSON.stringify(ratings));
+  localStorage.setItem('cinema_reviews', JSON.stringify(reviews));
+  localStorage.setItem('cinema_diary', JSON.stringify(diary));
+  localStorage.setItem('cinema_activities', JSON.stringify(activities));
 
   if (window.currentUser && window.db && typeof window.doc === 'function') {
     try {
@@ -453,6 +465,7 @@ async function saveData() {
         watchedList: watchedList,
         watchedEpisodes: watchedEpisodes,
         following: followingList,
+        watchlist, ratings, reviews, diary, activities,
         lastUpdated: new Date()
       }, { merge: true });
     } catch (error) {
@@ -472,6 +485,11 @@ window.syncUserDataFromCloud = async function() {
         watchedList = data.watchedList || [];
         watchedEpisodes = data.watchedEpisodes || [];
         followingList = data.following || [];
+        watchlist = data.watchlist || [];
+        ratings = data.ratings || {};
+        reviews = data.reviews || [];
+        diary = data.diary || [];
+        activities = data.activities || [];
         saveData();
         if (currentCategory === 'favorites') displayFavorites();
       }
@@ -565,10 +583,13 @@ function toggleWatchedMovie(itemId, btn) {
   const idx = watchedList.indexOf(itemId);
   if (idx > -1) {
     watchedList.splice(idx, 1);
-    btn.classList.remove('active');
+    btn?.classList.remove('active');
   } else {
     watchedList.push(itemId);
-    btn.classList.add('active');
+    btn?.classList.add('active');
+    if (currentDetailItem && currentDetailItem.id === itemId) {
+      addActivity('watched', currentDetailItem);
+    }
   }
   saveData();
 }
@@ -595,6 +616,12 @@ async function openMovieDetails(itemId, mediaType = 'movie') {
   try {
     const res = await fetch(`${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=en-US`);
     const data = await res.json();
+    currentDetailItem = {
+      id: itemId, media_type: mediaType, title: data.title || data.name,
+      poster_path: data.poster_path, release_date: data.release_date || data.first_air_date,
+      vote_average: data.vote_average || 0
+    };
+    setupSocialActions(currentDetailItem);
 
     document.getElementById('modalTitle').textContent = data.title || data.name;
     document.getElementById('modalOverview').textContent = data.overview || 'No overview available.';
@@ -705,6 +732,7 @@ function toggleWatchedEp(epKey, btn) {
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
   } else {
     watchedEpisodes.push(epKey);
+    if (currentDetailItem) addActivity('episode', currentDetailItem, { episodeKey: epKey });
     btn.className = 'btn btn-sm btn-success position-absolute top-0 end-0 m-2 btn-ep-watch';
     btn.innerHTML = '<i class="fa-solid fa-check-double"></i>';
   }
@@ -722,6 +750,7 @@ function toggleFavorite(item, btn) {
     btn.querySelector('i').className = 'fa-regular fa-heart';
     if (currentCategory === 'favorites') displayFavorites();
   } else {
+    addActivity('favorite', item);
     favorites.push({
       id: item.id, title: item.title || item.name, poster_path: item.poster_path,
       release_date: item.release_date || item.first_air_date, vote_average: item.vote_average
@@ -751,11 +780,20 @@ function loadCategory(category) {
   if (category === 'movies') document.getElementById('nav-movies')?.classList.add('active');
   if (category === 'series') document.getElementById('nav-series')?.classList.add('active');
   if (category === 'favorites') document.getElementById('nav-favs')?.classList.add('active');
+  if (category === 'watchlist') document.getElementById('nav-watchlist')?.classList.add('active');
+  if (category === 'upnext') document.getElementById('nav-upnext')?.classList.add('active');
+  if (category === 'diary') document.getElementById('nav-diary')?.classList.add('active');
+  if (category === 'activity') document.getElementById('nav-activity')?.classList.add('active');
 
   const t = translations[currentLang];
   if (sectionTitle) sectionTitle.textContent = t[`${category}Title`] || t.trendingTitle;
 
-  category === 'favorites' ? displayFavorites() : fetchMultiplePages(category);
+  if (category === 'favorites') displayFavorites();
+  else if (category === 'watchlist') displayWatchlist();
+  else if (category === 'diary') displayDiary();
+  else if (category === 'activity') displayActivityFeed();
+  else if (category === 'upnext') displayUpNext();
+  else fetchMultiplePages(category);
 }
 
 window.loadCategory = loadCategory;
@@ -773,6 +811,13 @@ function toggleLanguage() {
   document.getElementById('nav-movies').textContent = t.movies;
   document.getElementById('nav-series').textContent = t.series;
   document.getElementById('nav-fav-text').textContent = t.favs;
+  const extra = currentLang === 'en-US'
+    ? {watchlist:'Watchlist', upnext:'Up Next', diary:'Diary', activity:'Activity'}
+    : {watchlist:'قائمة المشاهدة', upnext:'التالي', diary:'اليوميات', activity:'النشاط'};
+  document.getElementById('nav-watchlist-text').textContent = extra.watchlist;
+  document.getElementById('nav-upnext-text').textContent = extra.upnext;
+  document.getElementById('nav-diary-text').textContent = extra.diary;
+  document.getElementById('nav-activity-text').textContent = extra.activity;
   searchInput.placeholder = t.searchPlaceholder;
   document.getElementById('btn-search').textContent = t.searchBtn;
   langBtn.textContent = t.langBtn;
@@ -840,5 +885,96 @@ if (searchForm) {
     searchInput.value = '';
   });
 }
+
+
+// ==========================================
+// 6️⃣ Social tracking: Watchlist, ratings, diary, reviews, feed, Up Next
+// ==========================================
+function itemKey(item) { return `${item.media_type || (item.title ? 'movie' : 'tv')}_${item.id}`; }
+function compactItem(item) {
+  return { id:item.id, media_type:item.media_type || (item.title ? 'movie':'tv'), title:item.title || item.name,
+    poster_path:item.poster_path || null, release_date:item.release_date || item.first_air_date || '', vote_average:item.vote_average || 0 };
+}
+function requireLogin() {
+  if (!window.currentUser) { alert(currentLang === 'en-US' ? 'Sign in first to sync this action.' : 'سجّل الدخول أولاً لمزامنة هذا الإجراء.'); return false; }
+  return true;
+}
+function addActivity(type, item, extra={}) {
+  if (!window.currentUser || !item) return;
+  activities.unshift({ id:`${Date.now()}_${Math.random().toString(36).slice(2,7)}`, type, item:compactItem(item), extra,
+    createdAt:new Date().toISOString() });
+  activities = activities.slice(0,150);
+}
+function setupSocialActions(item) {
+  const key=itemKey(item), inWatchlist=watchlist.some(x=>itemKey(x)===key), watched=watchedList.includes(item.id);
+  const wBtn=document.getElementById('detail-watchlist-btn'), seenBtn=document.getElementById('detail-watched-btn');
+  if (wBtn) {
+    wBtn.className=`btn btn-sm ${inWatchlist?'btn-info':'btn-outline-info'}`;
+    wBtn.innerHTML=`<i class="${inWatchlist?'fa-solid':'fa-regular'} fa-clock me-1"></i> ${inWatchlist?'In Watchlist':'Watchlist'}`;
+    wBtn.onclick=()=>toggleWatchlist(item);
+  }
+  if (seenBtn) {
+    seenBtn.className=`btn btn-sm ${watched?'btn-success':'btn-outline-success'}`;
+    seenBtn.innerHTML=`<i class="fa-solid fa-eye me-1"></i> ${watched?'Watched':'Mark watched'}`;
+    seenBtn.onclick=()=>{ toggleWatchedMovie(item.id, seenBtn); setupSocialActions(item); };
+  }
+  document.getElementById('detail-log-btn').onclick=()=>logDiary(item);
+  document.getElementById('save-review-btn').onclick=()=>saveReview(item);
+  document.getElementById('clear-rating-btn').onclick=()=>{ delete ratings[key]; saveData(); renderRatingStars(item); };
+  const myReview=reviews.find(r=>r.itemKey===key && r.uid===window.currentUser?.uid);
+  document.getElementById('detail-review-text').value=myReview?.text || '';
+  renderRatingStars(item);
+}
+function renderRatingStars(item) {
+  const box=document.getElementById('detail-rating-stars'); if(!box) return;
+  const key=itemKey(item), value=Number(ratings[key]||0); box.innerHTML='';
+  for(let i=1;i<=5;i++) {
+    const b=document.createElement('button'); b.type='button'; b.className=i<=value?'active':''; b.innerHTML='<i class="fa-solid fa-star"></i>';
+    b.title=`${i}/5`; b.onclick=()=>{ if(!requireLogin()) return; ratings[key]=i; addActivity('rated',item,{rating:i}); saveData(); renderRatingStars(item); showActionStatus(`Rated ${i}/5`); };
+    box.appendChild(b);
+  }
+}
+function showActionStatus(text) { const el=document.getElementById('detail-action-status'); if(!el)return; el.textContent=text; el.classList.remove('d-none'); setTimeout(()=>el.classList.add('d-none'),1800); }
+function toggleWatchlist(item) {
+  if(!requireLogin()) return; const key=itemKey(item), idx=watchlist.findIndex(x=>itemKey(x)===key);
+  if(idx>-1) watchlist.splice(idx,1); else { watchlist.unshift(compactItem(item)); addActivity('watchlist',item); }
+  saveData(); setupSocialActions(item); showActionStatus(idx>-1?'Removed from watchlist':'Added to watchlist');
+}
+function logDiary(item) {
+  if(!requireLogin()) return; const today=new Date().toISOString().slice(0,10), key=itemKey(item);
+  diary.unshift({ id:`${Date.now()}`, uid:window.currentUser.uid, itemKey:key, item:compactItem(item), watchedDate:today, rating:ratings[key]||null, createdAt:new Date().toISOString() });
+  if(!watchedList.includes(item.id)) watchedList.push(item.id);
+  watchlist=watchlist.filter(x=>itemKey(x)!==key); addActivity('logged',item,{date:today}); saveData(); setupSocialActions(item); showActionStatus('Added to diary');
+}
+function saveReview(item) {
+  if(!requireLogin()) return; const text=document.getElementById('detail-review-text').value.trim(); if(!text) return;
+  const key=itemKey(item), existing=reviews.findIndex(r=>r.itemKey===key && r.uid===window.currentUser.uid);
+  const record={id:existing>-1?reviews[existing].id:`${Date.now()}`,uid:window.currentUser.uid,itemKey:key,item:compactItem(item),text,rating:ratings[key]||null,createdAt:new Date().toISOString()};
+  if(existing>-1) reviews[existing]=record; else reviews.unshift(record); addActivity('reviewed',item,{text:text.slice(0,240),rating:record.rating}); saveData(); showActionStatus('Review posted');
+}
+function displayWatchlist() { if(!moviesGrid)return; watchlist.length?displayItems(watchlist):moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">Your watchlist is empty.</div>'; }
+function displayDiary() {
+  if(!moviesGrid)return; moviesGrid.innerHTML=''; if(!diary.length){moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">No diary entries yet.</div>';return;}
+  diary.forEach(d=>{const c=document.createElement('div');c.className='col-12';c.innerHTML=`<div class="diary-card d-flex gap-3 align-items-center"><img src="${d.item.poster_path?IMAGE_BASE_URL+d.item.poster_path:'https://placehold.co/80x120'}" style="width:58px;height:86px;object-fit:cover;border-radius:7px"><div class="flex-grow-1"><div class="fw-bold">${d.item.title}</div><div class="activity-meta"><i class="fa-regular fa-calendar me-1"></i>${d.watchedDate}${d.rating?' · ⭐ '+d.rating+'/5':''}</div></div><button class="btn btn-outline-info btn-sm">View</button></div>`; c.querySelector('button').onclick=()=>openMovieDetails(d.item.id,d.item.media_type);moviesGrid.appendChild(c);});
+}
+async function displayActivityFeed() {
+  if(!moviesGrid)return; moviesGrid.innerHTML='<div class="col-12 text-center py-5"><div class="spinner-border text-info"></div></div>';
+  if(!window.currentUser||!window.db){moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">Sign in to see activity from people you follow.</div>';return;}
+  const snap=await window.getDocs(window.collection(window.db,'users')); const feed=[];
+  snap.forEach(ds=>{const u=ds.data(); if(followingList.includes(u.uid)) (u.activities||[]).forEach(a=>feed.push({...a,user:{uid:u.uid,username:u.username,displayName:u.displayName,avatar:u.avatar}}));});
+  feed.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)); moviesGrid.innerHTML='';
+  if(!feed.length){moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">Follow people to build your activity feed.</div>';return;}
+  const verbs={watched:'watched',episode:'watched an episode of',favorite:'favorited',rated:'rated',watchlist:'added to watchlist',logged:'logged',reviewed:'reviewed'};
+  feed.slice(0,100).forEach(a=>{const c=document.createElement('div');c.className='col-12 col-lg-8 mx-auto'; const extra=a.type==='rated'?` · ⭐ ${a.extra?.rating}/5`:''; const review=a.type==='reviewed'?`<div class="review-text mt-2">“${escapeHtml(a.extra?.text||'')}”</div>`:''; c.innerHTML=`<div class="feed-card"><div class="d-flex gap-2"><img class="rounded-circle feed-avatar" src="${a.user.avatar||'https://placehold.co/80'}"><div class="flex-grow-1"><div><strong>${escapeHtml(a.user.displayName||a.user.username)}</strong> <span class="text-secondary">${verbs[a.type]||a.type}</span> <button class="btn btn-link text-info p-0 fw-bold item-link">${escapeHtml(a.item?.title||'')}</button>${extra}</div><div class="activity-meta">${new Date(a.createdAt).toLocaleString()}</div>${review}</div></div></div>`; c.querySelector('.item-link').onclick=()=>openMovieDetails(a.item.id,a.item.media_type);moviesGrid.appendChild(c);});
+}
+async function displayUpNext() {
+  if(!moviesGrid)return; moviesGrid.innerHTML='<div class="col-12 text-center py-5"><div class="spinner-border text-info"></div></div>';
+  const ids=[...new Set(watchedEpisodes.map(k=>k.split('_')[0]))]; if(!ids.length){moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">Mark TV episodes as watched and your next episodes will appear here.</div>';return;}
+  const cards=[];
+  for(const id of ids.slice(0,30)) { try { const show=await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=en-US`).then(r=>r.json()); let next=null; for(const season of (show.seasons||[]).filter(s=>s.season_number>0)) { const sd=await fetch(`${BASE_URL}/tv/${id}/season/${season.season_number}?api_key=${API_KEY}&language=en-US`).then(r=>r.json()); next=(sd.episodes||[]).find(ep=>!watchedEpisodes.includes(`${id}_S${season.season_number}_E${ep.episode_number}`)); if(next){cards.push({show,season:season.season_number,ep:next});break;} } } catch(e){console.error(e);} }
+  moviesGrid.innerHTML=''; if(!cards.length){moviesGrid.innerHTML='<div class="col-12 text-center text-muted py-5">You are all caught up 🎉</div>';return;}
+  cards.forEach(x=>{const c=document.createElement('div');c.className='col-12 col-md-6'; const img=x.ep.still_path?IMAGE_BASE_URL+x.ep.still_path:'https://placehold.co/500x280'; c.innerHTML=`<div class="upnext-card h-100"><img src="${img}" class="w-100 rounded mb-2" style="aspect-ratio:16/9;object-fit:cover"><div class="text-info small">${escapeHtml(x.show.name)} · S${x.season}E${x.ep.episode_number}</div><div class="fw-bold">${escapeHtml(x.ep.name||'Episode')}</div><div class="activity-meta mt-1">${x.ep.air_date||''}</div><button class="btn btn-success btn-sm mt-2"><i class="fa-solid fa-check me-1"></i>Mark watched</button></div>`; c.querySelector('button').onclick=()=>{toggleWatchedEp(`${x.show.id}_S${x.season}_E${x.ep.episode_number}`,c.querySelector('button'));displayUpNext();};moviesGrid.appendChild(c);});
+}
+function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
 
 loadCategory('trending');

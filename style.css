@@ -85,3 +85,20 @@ body {
 /* إصلاح تراكب الـ Modal الخلفي */
 .modal-backdrop { z-index: 1040 !important; }
 .modal { z-index: 1050 !important; }
+/* Social tracking layer inspired by best-in-class film/TV trackers */
+.social-action-panel {
+  background: rgba(30, 41, 59, .55);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+}
+.rating-stars { display:flex; gap:4px; }
+.rating-stars button { background:none; border:0; color:#64748b; padding:0; font-size:1.25rem; }
+.rating-stars button.active { color:#fbbf24; }
+.feed-card, .diary-card, .upnext-card {
+  background:#121824; border:1px solid #1e293b; border-radius:12px; padding:14px;
+}
+.feed-avatar { width:42px; height:42px; object-fit:cover; }
+.activity-meta { font-size:11px; color:#94a3b8; }
+.review-text { white-space:pre-wrap; color:#cbd5e1; }
+.progress-thin { height:5px; }
