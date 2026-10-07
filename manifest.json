@@ -1,6 +1,7 @@
 {
-  "short_name": "سينما",
-  "name": "تطبيق متتبع الأفلام والمسلسلات",
+  "short_name": "CineLog",
+  "name": "CineLog \u2014 Movie & TV Tracker",
+  "description": "Track movies and TV shows, log your watches, review titles, follow friends and manage your watchlist.",
   "icons": [
     {
       "src": "cinema.png",
@@ -14,10 +15,11 @@
     }
   ],
   "start_url": "./index.html",
+  "scope": "./",
   "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "theme_color": "#0a0f18",
   "display": "standalone",
-  "orientation": "portrait",
-  "dir": "rtl",
-  "lang": "ar"
+  "orientation": "portrait-primary",
+  "dir": "ltr",
+  "lang": "en"
 }

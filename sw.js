@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cinema-app-v2';
+const CACHE_NAME = 'cinelog-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './firebase-config.js'
+  './cinema.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,7 +35,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
-  // عدم تخزين طلبات الشبكة الخاصة بـ Firebase و TMDB API لتظل دائماً حية ومتجددة
+  // Keep Firebase and TMDB requests live instead of serving stale cached API data.
   if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('api.themoviedb.org')) {
     return;
   }
