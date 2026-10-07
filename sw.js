@@ -1,11 +1,14 @@
-const CACHE_NAME = 'cinelog-v3';
+const CACHE_NAME = 'watchlist-v1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './cinema.png'
+  './watchlist-icon.png',
+  './watchlist-logo.png',
+  './watchlist-icon-192.png',
+  './watchlist-icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

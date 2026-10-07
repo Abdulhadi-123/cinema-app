@@ -119,10 +119,11 @@ body {
 @media (max-width: 991px) { .navbar-nav { max-height:45vh; overflow:auto; } }
 
 
-/* ===== CineLog professional navigation ===== */
+/* ===== WatchList professional navigation ===== */
 .app-navbar { background: rgba(10,15,24,.96)!important; border-bottom:1px solid rgba(148,163,184,.14); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); min-height:68px; box-shadow:0 8px 28px rgba(0,0,0,.18); }
 .app-brand { color:#f8fafc!important; font-weight:800; letter-spacing:-.03em; font-size:1.2rem; flex-shrink:0; }
 .brand-logo { width:34px; height:34px; object-fit:cover; border-radius:9px; box-shadow:0 0 0 1px rgba(255,255,255,.08); }
+.brand-wordmark { display:block; height:42px; width:auto; max-width:190px; object-fit:contain; }
 .app-primary-nav,.app-secondary-nav { gap:.15rem; }
 .app-navbar .nav-link { border-radius:8px; padding:.5rem .65rem!important; font-size:.9rem; font-weight:600; white-space:nowrap; color:#b9c4d2!important; }
 .app-navbar .nav-link:hover,.app-navbar .nav-link.active,.app-navbar .dropdown-item.active { color:#fff!important; background:rgba(56,189,248,.11)!important; }
@@ -157,3 +158,5 @@ body {
 @media (min-width:1200px) { .app-navbar .container-fluid { flex-wrap:nowrap; } .app-navbar .navbar-collapse { min-width:0; } }
 
 .app-navbar .nav-item.dropdown:has(.dropdown-item.active) > .dropdown-toggle { color:#fff!important; background:rgba(56,189,248,.11)!important; }
+
+@media (max-width: 575.98px) { .brand-wordmark { height: 34px; max-width: 154px; } }

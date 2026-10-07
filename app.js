@@ -28,7 +28,7 @@ const sectionTitle = document.getElementById('section-title');
 
 const translations = {
   'en-US': {
-    logo: 'CineLog', home: 'Home', movies: 'Movies', series: 'TV Shows', favs: 'Favorites',
+    logo: 'WatchList', home: 'Home', movies: 'Movies', series: 'TV Shows', favs: 'Favorites',
     searchPlaceholder: 'Search movies, TV shows, or @username...', searchBtn: 'Search',
     trendingTitle: 'Trending & Recommended 🔥', moviesTitle: 'Popular Movies 🎬',
     seriesTitle: 'Popular TV Shows 📺', favsTitle: 'My Favorites ❤️', watchlistTitle: 'My Watchlist ⏱️',

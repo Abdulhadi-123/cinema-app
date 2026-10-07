@@ -1,16 +1,21 @@
 {
-  "short_name": "CineLog",
-  "name": "CineLog \u2014 Movie & TV Tracker",
+  "short_name": "WatchList",
+  "name": "WatchList — Movie & TV Tracker",
   "description": "Track movies and TV shows, log your watches, review titles, follow friends and manage your watchlist.",
   "icons": [
     {
-      "src": "cinema.png",
+      "src": "watchlist-icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "cinema.png",
+      "src": "watchlist-icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "watchlist-icon.png",
+      "sizes": "1254x1254",
       "type": "image/png"
     }
   ],
