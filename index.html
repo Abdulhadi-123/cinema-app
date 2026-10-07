@@ -39,6 +39,12 @@
           <li class="nav-item"><a class="nav-link" href="#" id="nav-upnext" onclick="loadCategory('upnext')"><span id="nav-upnext-text">التالي</span> <i class="fa-solid fa-forward"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" id="nav-diary" onclick="loadCategory('diary')"><span id="nav-diary-text">اليوميات</span> <i class="fa-regular fa-calendar-check"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" id="nav-activity" onclick="loadCategory('activity')"><span id="nav-activity-text">النشاط</span> <i class="fa-solid fa-users"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-reviews" onclick="loadCategory('reviews')"><span id="nav-reviews-text">المراجعات</span> <i class="fa-solid fa-message"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-lists" onclick="loadCategory('lists')"><span id="nav-lists-text">القوائم</span> <i class="fa-solid fa-list"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-calendar" onclick="loadCategory('calendar')"><span id="nav-calendar-text">التقويم</span> <i class="fa-regular fa-calendar"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-stats" onclick="loadCategory('stats')"><span id="nav-stats-text">الإحصائيات</span> <i class="fa-solid fa-chart-line"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-recommendations" onclick="loadCategory('recommendations')"><span id="nav-recommendations-text">لك</span> <i class="fa-solid fa-wand-magic-sparkles"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="nav-notifications" onclick="loadCategory('notifications')"><span id="nav-notifications-text">التنبيهات</span> <i class="fa-solid fa-bell"></i><span id="notification-badge" class="badge text-bg-danger ms-1 d-none">0</span></a></li>
         </ul>
 
         <!-- auth container -->
@@ -92,6 +98,7 @@
             <h5 id="profile-page-name" class="fw-bold mb-0"></h5>
             <span id="profile-page-username" class="text-info small"></span>
             <div id="profile-page-joined" class="text-secondary small mt-1"></div>
+            <div id="profile-page-bio" class="text-secondary small mt-2"></div>
           </div>
 
           <!-- زر المتابعة (يظهر عند زيارة بروفايل شخص آخر) -->
@@ -111,6 +118,16 @@
               <div class="mb-3">
                 <label class="form-label small text-secondary">الاسم المستعار</label>
                 <input type="text" id="edit-displayname" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-secondary">نبذة</label>
+                <textarea id="edit-bio" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" maxlength="240" placeholder="أخبر الناس عن ذوقك..."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-secondary">رابط صورة الغلاف</label>
+                <input type="url" id="edit-banner" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="https://...">
               </div>
 
               <div class="mb-3">
@@ -159,7 +176,19 @@
 
       <!-- عرض قوائم المشاهدة الخاصة بالمستخدم المستعرض -->
       <div class="col-md-8">
-        <h4 class="fw-bold mb-3 text-info"><i class="fa-solid fa-eye me-2"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h4>
+        <div id="profile-banner" class="profile-banner mb-3 d-none"></div>
+        <div class="mb-4">
+          <h5 class="fw-bold text-info"><i class="fa-solid fa-heart me-1"></i> Favorite Four</h5>
+          <div class="row g-2" id="profile-favorite-four"></div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-outline-info btn-sm" onclick="renderProfileSection('watched')">Watched</button>
+          <button class="btn btn-outline-info btn-sm" onclick="renderProfileSection('reviews')">Reviews</button>
+          <button class="btn btn-outline-info btn-sm" onclick="renderProfileSection('diary')">Diary</button>
+          <button class="btn btn-outline-info btn-sm" onclick="renderProfileSection('lists')">Lists</button>
+          <button class="btn btn-outline-info btn-sm" onclick="renderProfileSection('stats')">Stats</button>
+        </div>
+        <h4 class="fw-bold mb-3 text-info" id="profile-section-title"><i class="fa-solid fa-eye me-2"></i> الأعمال التي أتممت مشاهدتها / تابعتها</h4>
         <div class="row g-2" id="profile-watched-grid"></div>
       </div>
     </div>
@@ -182,6 +211,9 @@
             <li class="nav-item d-none" id="episodes-tab-li">
               <button class="nav-link text-light" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes-tab-pane"><i class="fa-solid fa-tv me-1"></i> الحلقات والمواسم</button>
             </li>
+            <li class="nav-item">
+              <button class="nav-link text-light" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane"><i class="fa-solid fa-comments me-1"></i> المجتمع</button>
+            </li>
           </ul>
 
           <div class="tab-content">
@@ -191,6 +223,7 @@
                   <button id="detail-watchlist-btn" class="btn btn-outline-info btn-sm"><i class="fa-regular fa-clock me-1"></i> Watchlist</button>
                   <button id="detail-watched-btn" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-eye me-1"></i> Watched</button>
                   <button id="detail-log-btn" class="btn btn-outline-light btn-sm"><i class="fa-regular fa-calendar-plus me-1"></i> Log</button>
+                  <button id="detail-favorite-four-btn" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-heart me-1"></i> Favorite Four</button>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                   <span class="small text-secondary">Your rating</span>
@@ -209,6 +242,14 @@
               </div>
               <h6 class="fw-bold mt-3 mb-2 text-info"><i class="fa-solid fa-users me-1"></i> طاقم التمثيل:</h6>
               <div id="castContainer" class="d-flex gap-2 overflow-auto pb-2"></div>
+            </div>
+
+            <div class="tab-pane fade" id="reviews-tab-pane">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0 text-info">Community reviews</h6>
+                <button class="btn btn-outline-secondary btn-sm" id="toggle-spoilers-btn">Show spoilers</button>
+              </div>
+              <div id="communityReviews"></div>
             </div>
 
             <div class="tab-pane fade" id="episodes-tab-pane">
@@ -248,6 +289,36 @@
     </div>
   </div>
 
+
+  <div class="modal fade" id="createListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary"><h5 class="modal-title">Create list</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input id="list-name" class="form-control bg-dark text-white border-secondary mb-2" placeholder="List name">
+          <textarea id="list-description" class="form-control bg-dark text-white border-secondary mb-2" rows="3" placeholder="Description"></textarea>
+          <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="list-private"><label class="form-check-label" for="list-private">Private list</label></div>
+          <button class="btn btn-info w-100" onclick="createCustomList()">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="episodeCommunityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary"><h5 id="episode-community-title" class="modal-title">Episode community</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="episode-reaction-bar" class="d-flex flex-wrap gap-2 mb-3"></div>
+          <textarea id="episode-comment-text" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="Comment on this episode..."></textarea>
+          <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="episode-spoiler"><label class="form-check-label" for="episode-spoiler">Contains spoilers</label></div>
+          <button id="episode-comment-submit" class="btn btn-info btn-sm mb-3">Post comment</button>
+          <div id="episode-community-feed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal عرض قائمة المتابعين والمتابعون -->
   <div class="modal fade" id="followersModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -267,7 +338,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, deleteDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAfeNg330qt5ZM7_eZvbMcgOMpw74Kdnj0",
@@ -292,6 +363,11 @@
     window.query = query;
     window.where = where;
     window.getDocs = getDocs;
+    window.deleteDoc = deleteDoc;
+    window.updateDoc = updateDoc;
+    window.orderBy = orderBy;
+    window.limit = limit;
+    window.serverTimestamp = serverTimestamp;
 
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
